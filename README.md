@@ -22,7 +22,7 @@ Built for the **YouCam API Skin AI & eCommerce VTO Hackathon**.
 4. **Live coach.** The webcam view sits next to your goal picture. Face and hand tracking run in the
    browser. A pink guide shows where to work (lid zone, crease line, wing angle) and a dot shows
    where the coach thinks your brush tip is. Tips appear as text and, if you want, spoken aloud.
-   Step by step: get ready, shadow base, crease, liner, wing.
+   Step by step: get ready, crease, lid color, outer corner, liner, wing (depending on the look).
 5. **Finish.** Before / goal / after side by side, plus 2 or 3 tips for next time based on what the
    coach saw most.
 
@@ -55,6 +55,10 @@ All calls go through a small server (`api/`) that holds the API key. The flow:
 - **Voice:** the browser's built-in speech (Web Speech API).
 - **Privacy:** the camera video never leaves the browser. Only the selfie goes to YouCam, and only in
   live mode.
+
+The step order, wing angle, hooded-lid placement and color rules follow common beginner guides.
+The product model was tested on real photos. Sources and results are in
+[docs/research.md](docs/research.md).
 
 ### How the live tips work (and their honest limits)
 

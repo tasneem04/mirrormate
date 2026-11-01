@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { startCamera, stopCamera, snapshot, brightness } from '../lib/camera.js';
 import { loadTrackers, pickBrushHand } from '../lib/tracking.js';
 import {
-  coachTip, newHistory, eyeFrame, creaseLine, creaseHeight, toolPoint, STEP_INFO,
+  coachTip, newHistory, eyeFrame, creaseLine, creaseHeight, toolPoint, STEP_INFO, stepHow,
 } from '../lib/coachRules.js';
 import { speak, stopSpeaking } from '../lib/speech.js';
 
@@ -32,6 +32,16 @@ function drawOverlay(canvas, video, face, hand, step, ctx) {
       [...crease].reverse().forEach((p) => g.lineTo(p.x, p.y));
       g.closePath();
       g.fillStyle = 'rgba(194, 87, 122, 0.22)';
+      g.fill();
+    } else if (step === 'outer') {
+      // Outer third of the lid zone (upperLid and crease points run outer -> inner).
+      const lid = f.upperLid.slice(0, 4);
+      const top = crease.slice(0, 4);
+      g.beginPath();
+      lid.forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
+      [...top].reverse().forEach((p) => g.lineTo(p.x, p.y));
+      g.closePath();
+      g.fillStyle = 'rgba(120, 50, 70, 0.35)';
       g.fill();
     } else if (step === 'crease') {
       g.beginPath();
@@ -100,7 +110,7 @@ export default function LiveCoach({ session, update, next, back }) {
     shownRef.current = { tip: null, at: 0 };
     setTip(null);
     const info = STEP_INFO[steps[stepIdx]];
-    if (voiceRef.current && info) speak(`${info.title}. ${info.how}`, { minGapMs: 0 });
+    if (voiceRef.current && info) speak(`${info.title}. ${stepHow(steps[stepIdx], profile)}`, { minGapMs: 0 });
   }, [stepIdx]);
 
   // Show a new tip, but hold each one for a moment so the text doesn't flicker.
@@ -181,7 +191,7 @@ export default function LiveCoach({ session, update, next, back }) {
           {status && <div className="hint" role="status">{status}</div>}
         </div>
         <div className={`tip ${tip?.level || 'info'}`} role="status" aria-live="polite">
-          {tip ? tip.text : status ? 'Getting ready...' : info.how}
+          {tip ? tip.text : status ? 'Getting ready...' : stepHow(step, profile)}
         </div>
         {error && <p className="error" role="alert">{error}</p>}
         <p className="small muted" style={{ margin: 0 }}>
@@ -203,7 +213,7 @@ export default function LiveCoach({ session, update, next, back }) {
               </li>
             ))}
           </ol>
-          <p className="small" style={{ margin: 0 }}><strong>{info.title}:</strong> {info.how}</p>
+          <p className="small" style={{ margin: 0 }}><strong>{info.title}:</strong> {stepHow(step, profile)}</p>
           <div className="actions">
             {!last && <button className="btn" onClick={() => setStepIdx((i) => i + 1)}>Next step</button>}
             {last && <button className="btn" onClick={finish}>Finish and take photo</button>}

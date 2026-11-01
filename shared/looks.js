@@ -22,7 +22,7 @@ export const LOOKS = [
     name: 'Soft natural',
     blurb: 'Light lid wash, a deeper outer corner and a thin line. Great first look.',
     tools: ['flat_brush', 'blend_brush', 'liner_pencil'],
-    steps: ['prep', 'base', 'crease', 'liner'],
+    steps: ['prep', 'crease', 'base', 'liner'],
     effects: (s) => [
       { category: 'eye_shadow', pattern: { name: '2colors1' }, palettes: [matte(s.light, 45), matte(s.mid, 45)] },
       { category: 'eye_liner', pattern: { name: 'Upper6' }, palettes: [matte(s.liner, 50)] },
@@ -33,7 +33,7 @@ export const LOOKS = [
     name: 'Soft smoky',
     blurb: 'Three shades blended from light to deep, smudged liner. Practice blending.',
     tools: ['flat_brush', 'blend_brush', 'liner_pencil', 'swab'],
-    steps: ['prep', 'base', 'crease', 'liner'],
+    steps: ['prep', 'crease', 'base', 'outer', 'liner'],
     effects: (s) => [
       { category: 'eye_shadow', pattern: { name: '3colors1' }, palettes: [matte(s.light, 55), matte(s.mid, 60), matte(s.deep, 65)] },
       { category: 'eye_liner', pattern: { name: 'Smoke11' }, palettes: [matte(s.deep, 55)] },

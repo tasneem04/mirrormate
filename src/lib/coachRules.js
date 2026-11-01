@@ -172,19 +172,37 @@ export function strokeAngle(frame, points) {
   return deg(Math.atan2(upward, along));
 }
 
+// How far the wing reaches toward the brow tail: 0 = outer lash corner, 1 = the brow tail.
+// Guides say a wing should never reach the brow.
+export function wingReach(frame, points) {
+  const target = sub(frame.browTail, frame.lowerOuter);
+  const L2 = dot(target, target) || 1;
+  return Math.max(...points.map((p) => dot(sub(p, frame.lowerOuter), target) / L2));
+}
+
 // ---------- the tips ----------
 
 // Every tip has an id (for the log and the finish tips), a short text, and a level:
 //   fix  = something to change (orange), good = keep going (green), info = neutral.
 const T = (id, text, level = 'fix') => ({ id, text, level });
 
+// Step order follows common beginner guides: prep (primer) -> transition shade in the crease ->
+// lid color -> darker outer corner -> liner -> wing. See docs/research.md for sources.
 export const STEP_INFO = {
-  prep: { title: 'Get ready', how: 'Sit facing the camera in good light. Keep your face inside the frame.' },
-  base: { title: 'Shadow base', how: 'Flat brush, light shade. Pat it on the lid, from the lashes up to the fold.' },
-  crease: { title: 'Crease', how: 'Fluffy brush, middle shade. Small side-to-side moves in the fold of your lid.' },
+  prep: { title: 'Get ready', how: 'Pat a little eye primer or concealer on your lids. Sit facing the camera in good light.' },
+  crease: { title: 'Crease', how: 'Fluffy brush, a matte shade a little darker than your skin. Small side-to-side moves in the fold of your lid.' },
+  base: { title: 'Lid color', how: 'Flat brush, your lid shade. Pat it on the lid, from the lashes up to the fold.' },
+  outer: { title: 'Outer corner', how: 'Small brush, your darkest shade. Press it into the outer corner, then sweep it into the crease.' },
   liner: { title: 'Liner', how: 'Short strokes along the upper lashes, from the inner to the outer corner.' },
-  wing: { title: 'Wing', how: 'From the outer corner, flick out toward the end of your brow. Then connect it to the lash line.' },
+  wing: { title: 'Wing', how: 'From the outer corner, flick out toward the end of your brow. Keep it short of the brow.' },
 };
+
+// Hooded lids: guides say to place crease color just above the natural fold, with eyes open.
+export function stepHow(step, profile) {
+  const how = STEP_INFO[step]?.how || '';
+  if (step === 'crease' && profile?.eyelid === 'Hooded-lid') return `${how} With hooded lids, go just above the fold and check with your eyes open.`;
+  return how;
+}
 
 // Face checks shared by all steps. Returns a tip or null when the face is fine.
 export function faceCheck(face, w, h, brightness) {
@@ -201,7 +219,7 @@ export function faceCheck(face, w, h, brightness) {
 }
 
 // Main entry point. Called about every frame.
-//   step: 'prep' | 'base' | 'crease' | 'liner' | 'wing'
+//   step: 'prep' | 'crease' | 'base' | 'outer' | 'liner' | 'wing'
 //   face: face landmarks or null; hand: hand landmarks or null
 //   history: { samples: [{t, side, h, s, x, y}], lastHandAt, eyeStats: {right:{}, left:{}} } (mutated)
 //   ctx: { w, h, now, brightness, profile, brushReach }
@@ -251,6 +269,12 @@ export function coachTip(step, face, hand, history, ctx) {
       if (lastFew.length > 12 && countReversals(lastFew) < 2) return T('blend_more', 'Blend more: small side-to-side moves.');
       return T('crease_ok', 'Great blending. Keep it soft.', 'good');
     }
+    case 'outer': {
+      if (hMed > creaseH + 0.15) return T('outer_lower', 'Keep the dark shade low, under the crease.');
+      const sMed = median(recent.map((p) => p.s));
+      if (sMed < 0.12) return T('outer_out', 'Move to the outer corner of your eye.');
+      return T('outer_ok', 'Good spot. Now sweep it softly into the crease.', 'good');
+    }
     case 'liner': {
       if (hMed > 0.15) return T('liner_close', 'Stay close to the lashes.');
       const pts = history.samples.filter((p) => p.side === frame.side && now - p.t < 600);
@@ -267,6 +291,7 @@ export function coachTip(step, face, hand, history, ctx) {
       stats.wingAngle = angle;
       if (diff < -10) return T('wing_low', 'Wing too low. Aim at the end of your brow.');
       if (diff > 12) return T('wing_high', 'Wing too steep. Aim a bit lower, at the brow tail.');
+      if (wingReach(frame, pts) > 0.55) return T('wing_long', 'Wing too long. Stop well before your brow.');
       if (other.wingAngle != null && Math.abs(other.wingAngle - angle) > 8) {
         return T('wing_sym', `This wing is ${angle > other.wingAngle ? 'steeper' : 'flatter'} than the other one. Match them.`);
       }
@@ -294,6 +319,9 @@ export const NEXT_TIME = {
   wing_low: 'Line the wing up with the end of your brow. A card held at that angle helps.',
   wing_high: 'A lower wing looks softer. Aim at the brow tail, not the middle of the brow.',
   wing_sym: 'Draw both wings as small dots first, compare them, then fill them in.',
+  wing_long: 'Keep the wing short: it should point at the end of your brow, never reach it.',
+  outer_lower: 'Keep the darkest shade in the outer corner, under the crease line.',
+  outer_out: 'Put the dark shade on the outer third of the lid only. That is what makes the eye look lifted.',
   no_hand: 'Keep your hand in view of the camera so the coach can help.',
   face_cam: 'Face the camera straight on. Turning makes the guides less accurate.',
   light: 'Put a lamp or window in front of you, not behind you.',

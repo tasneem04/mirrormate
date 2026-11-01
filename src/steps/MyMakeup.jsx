@@ -36,6 +36,7 @@ export default function MyMakeup({ session, update, next, back }) {
   const [camOn, setCamOn] = useState(false);
   const [frozen, setFrozen] = useState(null);      // data URL of the scanned crop
   const [guesses, setGuesses] = useState(null);    // [{product, score}]
+  const [sure, setSure] = useState(false);         // confident top guess?
   const [picking, setPicking] = useState(null);    // product waiting for a shade tap
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
@@ -64,9 +65,14 @@ export default function MyMakeup({ session, update, next, back }) {
     setGuesses(null);
     setBusy('Looking at your item...');
     try {
-      const g = await classifyProduct(canvas);
-      setGuesses(g);
-      if (!g.length) setError("I couldn't spot a product. Hold it closer, inside the box, on a plain background.");
+      const r = await classifyProduct(canvas);
+      setSure(r.sure);
+      if (r.notProduct) {
+        setError(r.notProduct);
+        setFrozen(null);
+      } else {
+        setGuesses(r.guesses);
+      }
     } catch (e) {
       setError('The product model could not run here. Pick the item from the list instead.');
       console.error(e);
@@ -114,7 +120,7 @@ export default function MyMakeup({ session, update, next, back }) {
     <section className="stack">
       <div>
         <h2>My makeup</h2>
-        <p className="muted">Hold each eye product or brush inside the box and tap Scan. Or pick it from the list.</p>
+        <p className="muted">Hold each eye product or brush inside the box and tap Scan. Open palettes so the colors show. Or pick it from the list.</p>
       </div>
 
       <div className="grid-2">
@@ -144,7 +150,7 @@ export default function MyMakeup({ session, update, next, back }) {
 
           {guesses && guesses.length > 0 && (
             <div className="card stack">
-              <h3>Is this your {guesses[0].product.label.toLowerCase()}?</h3>
+              <h3>{sure ? 'Looks like' : 'Maybe'} your {guesses[0].product.label.toLowerCase()}. Right?</h3>
               <div className="row">
                 {guesses.map((g) => (
                   <button key={g.product.id} className="chip" onClick={() => confirm(g.product)}>

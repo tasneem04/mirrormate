@@ -79,10 +79,22 @@ test('wing: along the brow-tail line is ok, flat is too low', () => {
   const target = wingTargetAngle(frame);
   assert.ok(target > 20 && target < 80, `target angle ${target}`);
   // From the outer corner (350,450) toward the brow tail direction (-35,-70).
-  const good = Array.from({ length: 10 }, (_, k) => ({ x: 350 - k * 3.5, y: 450 - k * 7 }));
+  const good = Array.from({ length: 10 }, (_, k) => ({ x: 350 - k * 1.6, y: 450 - k * 3.2 }));
   assert.equal(run('wing', good).id, 'wing_ok');
   const flat = Array.from({ length: 10 }, (_, k) => ({ x: 350 - k * 6, y: 450 }));
   assert.equal(run('wing', flat).id, 'wing_low');
+});
+
+test('wing: right angle but reaching the brow is too long', () => {
+  const long = Array.from({ length: 10 }, (_, k) => ({ x: 350 - k * 3.6, y: 450 - k * 7.2 }));
+  assert.equal(run('wing', long).id, 'wing_long');
+});
+
+test('outer corner: inner lid is wrong, outer corner is right', () => {
+  // Right eye: inner corner x=450, outer x=350, center 400. s>0.12 means x < 388.
+  assert.equal(run('outer', still({ x: 420, y: 430 })).id, 'outer_out');
+  assert.equal(run('outer', still({ x: 360, y: 430 })).id, 'outer_ok');
+  assert.equal(run('outer', still({ x: 360, y: 390 })).id, 'outer_lower');
 });
 
 test('no hand for over a second asks to bring it into view', () => {

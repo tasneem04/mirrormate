@@ -17,8 +17,16 @@ export const PRODUCTS = [
   { id: 'angled_brush', label: 'Thin angled brush', prompt: 'a photo of a thin angled eyeliner brush', kind: 'tool', shade: false },
   { id: 'swab', label: 'Cotton swabs', prompt: 'a photo of cotton swabs', kind: 'tool', shade: false },
 ];
-// Extra labels that catch "not a product" so the model doesn't force a wrong guess.
-export const NOT_PRODUCT = ['a photo of a face', 'a photo of a hand', 'a photo of a room'];
+// Extra labels that catch "not an eye product" so the model doesn't force a wrong guess.
+// Tested on real photos: without the lipstick label, lipsticks were guessed as primer or brushes.
+export const NOT_PRODUCT = [
+  { prompt: 'a photo of a face', say: "I see a face, not a product. Hold the item inside the box." },
+  { prompt: 'a photo of a hand', say: 'I mostly see your hand. Hold the item so it fills the box.' },
+  { prompt: 'a photo of a room', say: "I can't spot a product. Hold it closer, inside the box." },
+  { prompt: 'a photo of a lipstick', say: 'That looks like a lipstick. This coach is for eye products only.' },
+  { prompt: 'a photo of a bottle of nail polish', say: 'That looks like nail polish, not an eye product.' },
+  { prompt: 'a photo of a closed black makeup case', say: 'Open it so the colors show, then scan again.' },
+];
 
 export const productById = (id) => PRODUCTS.find((p) => p.id === id);
 
@@ -64,10 +72,16 @@ export function shadeVerdict(product, shadeHex, profile) {
 
   // Eyeshadow
   if (skinHex && deltaE(shadeHex, skinHex) < 10) return { level: 'ok', text: 'Very close to your skin. Great as a base shade, but it won\'t show as color.' };
+  // Guides: the crease "transition" shade is a matte one or two shades darker than your skin.
+  if (skinHex && skinL - L >= 5 && skinL - L <= 20 && deltaE(shadeHex, skinHex) < 25 && chroma < 35) {
+    return { level: 'great', text: 'A little darker than your skin: a perfect crease (transition) shade.' };
+  }
   if (skinL - L < -12 && profile?.depth === 'deep') return { level: 'careful', text: 'Much lighter than your skin. Use it as a highlight only, or it can look chalky.' };
 
+  // Guides: warm undertones suit golds, coppers, oranges and browns; cool undertones suit
+  // blues, greens, purples, silvers and greys; neutral undertones can wear both.
   const warmHue = hue >= 25 && hue <= 85; // golden, orange, warm brown
-  const coolHue = hue > 290 || hue < 15 || (chroma < 10 && L < 75); // pink, plum, mauve, ash/grey
+  const coolHue = hue > 150 || hue < 15 || (chroma < 10 && L < 75); // green, blue, purple, pink-plum, ash/grey
   if (tone === 'warm') {
     if (warmHue) return { level: 'great', text: 'Warm shade on warm skin: a great match.' };
     if (coolHue) return { level: 'careful', text: 'Cool or ashy shades can look a bit dull on warm skin. Mix with a warm brown.' };
