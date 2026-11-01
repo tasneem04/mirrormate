@@ -1,0 +1,179 @@
+// Step 1: take or upload a selfie, run the skin/tone/face analysis, show plain-English results.
+import React, { useEffect, useRef, useState } from 'react';
+import { startCamera, stopCamera, snapshot, fileToDataUrl } from '../lib/camera.js';
+import { analyzeSelfie, demo, setPasscode } from '../lib/api.js';
+import { buildProfile, profileCards } from '../lib/skinSummary.js';
+import { NAME } from '../brand.js';
+
+const HOW = [
+  ['Skin scan', 'A selfie tells us your skin type, undertone and eye shape.'],
+  ['Pick a look', 'See three eye looks on your own face. Pick your goal.'],
+  ['My makeup', 'Show your products. We say what suits you and what is missing.'],
+  ['Live coach', 'Do your eyes in front of the camera. Get a tip as you go.'],
+  ['Finish', 'Before, goal and after side by side, plus tips for next time.'],
+];
+
+// Small stroke icons for the result cards (no emoji).
+const ICONS = {
+  'Skin type': <path d="M12 3C8 9 6 12 6 15a6 6 0 0 0 12 0c0-3-2-6-6-12z" />,
+  'Your eyes': <><path d="M2 12Q12 3 22 12Q12 21 2 12z" /><circle cx="12" cy="12" r="3" /></>,
+  'Under the eyes': <path d="M4 10q8 8 16 0" />,
+  'Face shape': <ellipse cx="12" cy="12" rx="7" ry="9" />,
+};
+
+function ResultIcon({ card }) {
+  if (card.swatch) return <span className="swatch" style={{ background: card.swatch }} aria-hidden="true" />;
+  return (
+    <span className="icon" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">{ICONS[card.title]}</svg>
+    </span>
+  );
+}
+
+export default function SkinScan({ session, update, next, config }) {
+  const [phase, setPhase] = useState(session.profile ? 'results' : 'choose'); // choose | camera | working | results
+  const [progress, setProgress] = useState('');
+  const [error, setError] = useState('');
+  const [code, setCode] = useState('');
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const canGoLive = config?.hasKey;
+  const needsCode = config?.liveNeedsPasscode;
+  const locked = needsCode && !code;
+
+  useEffect(() => () => stopCamera(streamRef.current), []);
+
+  async function openCamera() {
+    setError('');
+    setPhase('camera');
+    try {
+      streamRef.current = await startCamera(videoRef.current);
+    } catch {
+      setError('Could not open the camera. Allow camera access, or upload a photo instead.');
+      setPhase('choose');
+    }
+  }
+
+  async function analyze(dataUrl) {
+    setPasscode(code.trim());
+    setError('');
+    setPhase('working');
+    try {
+      const r = await analyzeSelfie(dataUrl, setProgress);
+      update({
+        mode: 'live',
+        selfie: dataUrl,
+        scanMeta: { hash: r.hash, fileId: r.fileId, fileAt: r.fileAt },
+        profile: buildProfile(r.scan),
+      });
+      setPhase('results');
+    } catch (e) {
+      setError(e.message);
+      setPhase('choose');
+    }
+  }
+
+  function takePhoto() {
+    const dataUrl = snapshot(videoRef.current, { maxSide: 1280 });
+    stopCamera(streamRef.current);
+    analyze(dataUrl);
+  }
+
+  async function onFile(e) {
+    const f = e.target.files?.[0];
+    if (f) analyze(await fileToDataUrl(f));
+  }
+
+  function useDemo() {
+    update({ mode: 'demo', selfie: demo.selfie, scanMeta: null, profile: buildProfile(demo.scan) });
+    setPhase('results');
+  }
+
+  if (phase === 'results' && session.profile) {
+    return (
+      <section className="stack">
+        <div>
+          <h2>Your skin scan</h2>
+          <p className="muted">Here is what we found, in plain words. We use it to pick your colors.</p>
+        </div>
+        <div className="grid-2">
+          <img src={session.selfie} alt="Your selfie" style={{ borderRadius: 20, width: '100%', maxHeight: 520, objectFit: 'cover' }} />
+          <div className="stack">
+            {profileCards(session.profile).map((c) => (
+              <div className="card result" key={c.title}>
+                <ResultIcon card={c} />
+                <div>
+                  <h3>{c.title}</h3>
+                  <p className="muted small" style={{ margin: 0 }}>{c.text}</p>
+                </div>
+              </div>
+            ))}
+            <div className="actions">
+              <button className="btn" onClick={next}>Next: pick a look</button>
+              <button className="btn ghost" onClick={() => setPhase('choose')}>Scan again</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="grid-2">
+      <div className="stack">
+        <h1>Do your eyes. Get a <em>tip</em> as you go.</h1>
+        <p className="lead">
+          Tutorials go fast. {NAME} watches while you apply eye makeup and tells you what to fix, one small tip at a time.
+        </p>
+
+        {phase === 'working' ? (
+          <div className="card row" role="status"><span className="spinner" aria-hidden="true" /> {progress || 'Working...'}</div>
+        ) : (
+          <div className="stack">
+            {canGoLive && needsCode && (
+              <label className="stack small" style={{ gap: 6 }}>
+                Live scan passcode
+                <input type="password" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Passcode" />
+              </label>
+            )}
+            <div className="actions">
+              {canGoLive && <button className="btn" onClick={openCamera} disabled={locked}>Take a selfie</button>}
+              {canGoLive && (
+                <label className={`btn ghost ${locked ? 'disabled' : ''}`} aria-disabled={locked}>
+                  Upload a photo
+                  <input type="file" accept="image/jpeg,image/png" hidden onChange={onFile} disabled={locked} />
+                </label>
+              )}
+              {demo.available && (
+                <button className={canGoLive ? 'btn ghost' : 'btn'} onClick={useDemo}>Try the demo</button>
+              )}
+            </div>
+            {!canGoLive && !demo.available && <p className="error">No API key and no demo data yet. See the README.</p>}
+            <p className="small muted" style={{ margin: 0 }}>For the best scan: face the camera, light from the front, no eye makeup yet.</p>
+          </div>
+        )}
+        {error && <p className="error" role="alert">{error}</p>}
+      </div>
+
+      {/* The camera is always rendered (hidden when not in use) so the video element exists before the stream starts. */}
+      <div className="cam" hidden={phase !== 'camera'}>
+        <video ref={videoRef} className="mirror" />
+        <div className="oval" />
+        <div className="hint">Fit your face in the oval</div>
+        <div className="cam-btn"><button className="btn" onClick={takePhoto}>Take photo</button></div>
+      </div>
+      <div className="card stack" hidden={phase === 'camera'}>
+        <h3>How it works</h3>
+        <ol className="how">
+          {HOW.map(([title, text], i) => (
+            <li key={title}>
+              <span className="num">{i + 1}</span>
+              <span><strong>{title}.</strong> <span className="muted">{text}</span></span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}

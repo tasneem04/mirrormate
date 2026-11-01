@@ -1,0 +1,30 @@
+{
+  "name": "mirrormate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MirrorMate: a live eye-makeup coach. Skin scan and virtual try-on by the YouCam API, live tips from in-browser face and hand tracking.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env server/dev.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "spike": "node --env-file-if-exists=.env scripts/spike-youcam.mjs",
+    "units": "node --env-file-if-exists=.env scripts/units.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.2",
+    "@mediapipe/tasks-vision": "^0.10.14",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "express": "^4.21.2",
+    "vite": "^5.4.11"
+  }
+}
