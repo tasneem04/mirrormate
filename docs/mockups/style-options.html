@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MirrorMate style mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #ecebea; font-family: system-ui, sans-serif; color: #222; }
+  .page { max-width: 1500px; margin: 0 auto; padding: 24px 16px 60px; }
+  .page > h1 { font-size: 22px; margin: 0 0 4px; }
+  .page > p { margin: 0 0 20px; color: #666; }
+  .cols { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+  .label { font-weight: 700; font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #666; font-size: 14px; margin: 0 0 12px; }
+  .frame { border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.12); margin-bottom: 18px; }
+  .bar { height: 26px; background: #d9d7d5; display: flex; gap: 6px; align-items: center; padding: 0 10px; }
+  .bar i { width: 9px; height: 9px; border-radius: 50%; background: #bdbab7; display: block; }
+  .screen { padding: 18px; min-height: 380px; }
+
+  /* Shared mock structure */
+  .hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; }
+  .dots { display: flex; gap: 5px; }
+  .dots span { width: 26px; height: 6px; border-radius: 4px; }
+  .hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; align-items: center; }
+  .hero h2 { margin: 0 0 8px; line-height: 1.1; }
+  .hero p { margin: 0 0 14px; font-size: 13px; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { padding: 10px 16px; font-weight: 700; font-size: 13px; border: 0; }
+  .steps3 { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+  .steps3 span { font-size: 11px; padding: 4px 8px; }
+  .art { aspect-ratio: 4/5; display: grid; place-items: center; overflow: hidden; }
+  .coach { display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; }
+  .cam { aspect-ratio: 4/3; position: relative; overflow: hidden; display: grid; place-items: center; }
+  .tip { margin-top: 10px; padding: 10px 12px; font-weight: 700; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+  .side { display: grid; gap: 10px; align-content: start; }
+  .goal { padding: 8px; }
+  .goal .g { aspect-ratio: 1; display: grid; place-items: center; }
+  .goal b { font-size: 12px; display: block; margin-bottom: 6px; }
+  .list { padding: 10px; font-size: 12px; display: grid; gap: 4px; }
+  .list div { padding: 5px 8px; }
+
+  /* ---------- Style 1: Soft rose ---------- */
+  .s1 .screen { background: #fbf7f5; color: #2a2326; font-family: 'DM Sans', sans-serif; }
+  .s1 .logo b { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; }
+  .s1 .mark { width: 28px; height: 18px; border-radius: 50%; background: #c2577a; position: relative; }
+  .s1 .mark::after { content: ''; position: absolute; inset: 4px 9px; border-radius: 50%; background: #fff; }
+  .s1 .dots span { background: #eedde3; } .s1 .dots span.on { background: #c2577a; }
+  .s1 .hero h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 30px; }
+  .s1 .hero h2 em { color: #c2577a; font-style: italic; }
+  .s1 .hero p { color: #776a6f; }
+  .s1 .btn { border-radius: 999px; background: #c2577a; color: #fff; box-shadow: 0 6px 14px rgba(194,87,122,.3); }
+  .s1 .btn.g { background: #fff; color: #2a2326; border: 1px solid #eee3e6; box-shadow: none; }
+  .s1 .steps3 span { background: #fff; border: 1px solid #eee3e6; border-radius: 999px; color: #776a6f; }
+  .s1 .art { border-radius: 24px; background: linear-gradient(160deg, #f8e6ec, #f3d9cf); }
+  .s1 .cam { border-radius: 18px; background: #3a3034; }
+  .s1 .tip { border-radius: 14px; background: #fcefdf; color: #c0721c; }
+  .s1 .goal, .s1 .list { background: #fff; border: 1px solid #eee3e6; border-radius: 16px; box-shadow: 0 6px 18px rgba(42,35,38,.06); }
+  .s1 .goal .g { border-radius: 12px; background: linear-gradient(160deg, #f8e6ec, #f3d9cf); }
+  .s1 .list div { border-radius: 8px; color: #776a6f; } .s1 .list div.on { background: #f8e6ec; color: #2a2326; font-weight: 700; }
+  .s1 .list div.done { color: #23885d; }
+
+  /* ---------- Style 2: Clean minimal ---------- */
+  .s2 .screen { background: #fff; color: #111; font-family: 'Inter', sans-serif; }
+  .s2 .hdr { border-bottom: 1px solid #ececec; padding-bottom: 12px; }
+  .s2 .logo b { font-weight: 800; letter-spacing: -.02em; }
+  .s2 .mark { width: 14px; height: 14px; background: #111; border-radius: 3px; }
+  .s2 .dots span { width: 18px; height: 18px; border-radius: 50%; background: #f1f1f1; font-size: 10px; display: grid; place-items: center; color: #999; }
+  .s2 .dots span.on { background: #111; color: #fff; }
+  .s2 .hero h2 { font-weight: 800; font-size: 28px; letter-spacing: -.03em; }
+  .s2 .kicker { font-size: 11px; font-weight: 600; letter-spacing: .12em; color: #e0457b; margin-bottom: 6px; }
+  .s2 .hero p { color: #666; }
+  .s2 .btn { border-radius: 8px; background: #111; color: #fff; }
+  .s2 .btn.g { background: #fff; color: #111; border: 1px solid #ddd; }
+  .s2 .steps3 span { border-radius: 6px; background: #f5f5f5; color: #666; }
+  .s2 .art { border-radius: 12px; background: #f5f5f5; border: 1px solid #ececec; }
+  .s2 .cam { border-radius: 10px; background: #1b1b1b; }
+  .s2 .tip { border-radius: 8px; background: #fff; border: 1px solid #ececec; border-left: 4px solid #e0457b; color: #111; }
+  .s2 .goal, .s2 .list { border: 1px solid #ececec; border-radius: 10px; }
+  .s2 .goal .g { border-radius: 6px; background: #f5f5f5; }
+  .s2 .list div { color: #888; border-radius: 6px; } .s2 .list div.on { color: #111; font-weight: 600; background: #f5f5f5; }
+  .s2 .list div.done { color: #111; text-decoration: line-through; text-decoration-color: #ccc; }
+
+  /* ---------- Style 3: Bold gradient ---------- */
+  .s3 .screen { background: linear-gradient(135deg, #ffd9c7 0%, #f6c6dc 45%, #d7c8f5 100%); color: #2b1d3a; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .s3 .logo b { font-weight: 800; }
+  .s3 .mark { width: 28px; height: 28px; border-radius: 10px; background: linear-gradient(135deg, #ff7aa8, #8b6cff); }
+  .s3 .dots span { background: rgba(255,255,255,.5); } .s3 .dots span.on { background: #2b1d3a; }
+  .s3 .hero h2 { font-weight: 800; font-size: 32px; letter-spacing: -.03em; text-transform: uppercase; }
+  .s3 .hero p { color: #4b3b5c; }
+  .s3 .btn { border-radius: 14px; background: #2b1d3a; color: #fff; }
+  .s3 .btn.g { background: rgba(255,255,255,.55); color: #2b1d3a; backdrop-filter: blur(8px); }
+  .s3 .steps3 span { border-radius: 999px; background: rgba(255,255,255,.55); }
+  .s3 .art { border-radius: 28px; background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.7); backdrop-filter: blur(10px); }
+  .s3 .cam { border-radius: 22px; background: #2b1d3a; }
+  .s3 .tip { border-radius: 16px; background: rgba(255,255,255,.7); color: #b5521d; backdrop-filter: blur(8px); }
+  .s3 .goal, .s3 .list { background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.75); border-radius: 20px; backdrop-filter: blur(10px); }
+  .s3 .goal .g { border-radius: 14px; background: rgba(255,255,255,.6); }
+  .s3 .list div { border-radius: 10px; color: #6b5a7c; } .s3 .list div.on { background: #2b1d3a; color: #fff; font-weight: 700; }
+  .s3 .list div.done { color: #2b1d3a; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>MirrorMate: pick a style</h1>
+  <p>Same two screens in each style: the start screen and the live coach. The eye drawings stand in for the real camera and selfie.</p>
+
+  <div class="cols" id="cols"></div>
+</div>
+
+<template id="tpl">
+  <div>
+    <p class="label"></p>
+    <p class="sub"></p>
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
+      <div class="screen">
+        <div class="hdr"><div class="logo"><span class="mark"></span><b>MirrorMate</b></div>
+          <div class="dots"><span class="on">1</span><span>2</span><span>3</span><span>4</span><span>5</span></div></div>
+        <div class="hero">
+          <div>
+            <div class="kicker">LIVE EYE-MAKEUP COACH</div>
+            <h2>Do your eyes. Get a <em>tip</em> as you go.</h2>
+            <p>Tutorials go fast. MirrorMate watches while you apply and tells you what to fix, one small tip at a time.</p>
+            <div class="btns"><button class="btn">Take a selfie</button><button class="btn g">Use demo scan</button></div>
+            <div class="steps3"><span>1 Skin scan</span><span>2 Pick a look</span><span>3 My makeup</span><span>4 Live coach</span><span>5 Finish</span></div>
+          </div>
+          <div class="art">EYE</div>
+        </div>
+      </div></div>
+    <div class="frame"><div class="bar"><i></i><i></i><i></i></div>
+      <div class="screen">
+        <div class="hdr"><div class="logo"><span class="mark"></span><b>MirrorMate</b></div>
+          <div class="dots"><span>1</span><span>2</span><span>3</span><span class="on">4</span><span>5</span></div></div>
+        <div class="coach">
+          <div>
+            <div class="cam">CAM</div>
+            <div class="tip">⚠ Go higher, into the fold.</div>
+          </div>
+          <div class="side">
+            <div class="goal"><b>Your goal: Soft smoky</b><div class="g">GOAL</div></div>
+            <div class="list"><div class="done">✓ Get ready</div><div class="done">✓ Shadow base</div><div class="on">3. Crease</div><div>4. Liner</div></div>
+          </div>
+        </div>
+      </div></div>
+  </div>
+</template>
+
+<script>
+  // Simple abstract eye drawings (no real faces).
+  const eye = (lid, accent, line) => `<svg viewBox="0 0 200 120" width="88%" aria-hidden="true">
+    <path d="M20 70 Q100 10 180 70" fill="none" stroke="${line}" stroke-width="3" stroke-dasharray="8 6"/>
+    <path d="M30 78 Q100 30 170 78 Q100 108 30 78 Z" fill="${lid}" stroke="${accent}" stroke-width="3"/>
+    <circle cx="100" cy="75" r="18" fill="${accent}"/><circle cx="106" cy="70" r="5" fill="#fff"/>
+    <path d="M168 76 L188 60" stroke="${accent}" stroke-width="4" stroke-linecap="round"/>
+    <path d="M40 30 Q100 5 165 28" fill="none" stroke="${accent}" stroke-width="6" stroke-linecap="round" opacity=".55"/>
+  </svg>`;
+  const cam = (line, dot) => `<svg viewBox="0 0 320 240" width="100%" height="100%" aria-hidden="true">
+    <ellipse cx="160" cy="130" rx="92" ry="112" fill="#6b5a60"/>
+    <path d="M95 112 Q120 92 145 112 Q120 124 95 112Z" fill="#f4ece8"/><circle cx="120" cy="111" r="7" fill="#2b2326"/>
+    <path d="M175 112 Q200 92 225 112 Q200 124 175 112Z" fill="#f4ece8"/><circle cx="200" cy="111" r="7" fill="#2b2326"/>
+    <path d="M93 100 Q120 80 147 100" fill="none" stroke="${line}" stroke-width="3" stroke-dasharray="6 5"/>
+    <path d="M173 100 Q200 80 227 100" fill="none" stroke="${line}" stroke-width="3" stroke-dasharray="6 5"/>
+    <circle cx="214" cy="106" r="7" fill="${dot}" stroke="#fff" stroke-width="2"/>
+  </svg>`;
+  const styles = [
+    { cls: 's1', name: 'A. Soft rose', sub: 'Warm cream, rose accent, a serif headline. Soft beauty feel. (Recommended)',
+      eye: eye('#f3d9cf', '#c2577a', '#c2577a'), cam: cam('#ff8fb4', '#e08a2b'), goal: eye('#e9c3b8', '#8d3f5c', '#8d3f5c') },
+    { cls: 's2', name: 'B. Clean minimal', sub: 'White, grey and black with one pink accent. Precise and techy.',
+      eye: eye('#f1f1f1', '#111', '#e0457b'), cam: cam('#e0457b', '#e0457b'), goal: eye('#e5e5e5', '#333', '#e0457b') },
+    { cls: 's3', name: 'C. Bold gradient', sub: 'Peach-to-lilac gradient, glassy cards, big type. Stands out in a video.',
+      eye: eye('#ffe3ef', '#8b6cff', '#ff7aa8'), cam: cam('#ff9ccd', '#ffb35c'), goal: eye('#f6d4ff', '#6b4fd8', '#ff7aa8') },
+  ];
+  const tpl = document.getElementById('tpl');
+  for (const s of styles) {
+    const n = tpl.content.cloneNode(true);
+    n.firstElementChild.classList.add(s.cls);
+    n.querySelector('.label').textContent = s.name;
+    n.querySelector('.sub').textContent = s.sub;
+    n.querySelector('.art').innerHTML = s.eye;
+    n.querySelector('.cam').innerHTML = s.cam;
+    n.querySelector('.goal .g').innerHTML = s.goal;
+    if (s.cls !== 's2') n.querySelector('.kicker').remove();
+    if (s.cls !== 's2') n.querySelectorAll('.dots span').forEach((d) => (d.textContent = ''));
+    document.getElementById('cols').appendChild(n);
+  }
+</script>
+</body>
+</html>

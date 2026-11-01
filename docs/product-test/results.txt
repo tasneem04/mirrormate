@@ -1,0 +1,29 @@
+Product-model test, 2026-11-02. Model: Xenova/clip-vit-base-patch32 (zero-shot), labels from src/lib/products.js at that time.
+Format: true type, file -> top 3 guesses. Note: the 'brush' search also returned 3 palette photos that show brushes.
+
+brush         398756f9.jpg  ->  palette 70%, single_shadow 11%, blend_brush 8%
+brush         3af19ddd.jpg  ->  palette 45%, blend_brush 22%, flat_brush 21%
+brush         6743a1b4.jpg  ->  blend_brush 70%, flat_brush 24%, single_shadow 6%
+brush         9712d995.jpg  ->  blend_brush 68%, flat_brush 30%, angled_brush 1%
+brush         fd1682c0.jpg  ->  palette 84%, single_shadow 8%, concealer 7%
+liner_liquid  0568472a.jpg  ->  mascara 42%, liner_liquid 31%, primer 9%
+liner_liquid  172f04d4.jpg  ->  liner_liquid 65%, angled_brush 12%, primer 10%
+liner_liquid  25bfdad6.jpg  ->  liner_liquid 47%, angled_brush 37%, liner_pencil 11%
+liner_liquid  31ddac04.jpg  ->  liner_liquid 68%, primer 8%, liner_pencil 8%
+liner_liquid  53e546ce.jpg  ->  liner_pencil 42%, primer 31%, liner_liquid 16%
+liner_pencil  646d0096.jpg  ->  palette 80%, liner_liquid 6%, single_shadow 6%
+lipstick      0531b265.jpg  ->  NOT:a face 74%, NOT:a hand 9%, liner_liquid 8%
+lipstick      6d4952d2.jpg  ->  primer 57%, concealer 20%, liner_liquid 16%
+lipstick      8d2f33d5.jpg  ->  blend_brush 48%, concealer 28%, flat_brush 7%
+lipstick      91a917a5.jpg  ->  NOT:a face 59%, NOT:a hand 25%, liner_liquid 7%
+mascara       0076e36e.jpg  ->  mascara 71%, concealer 18%, angled_brush 4%
+mascara       01a885b8.jpg  ->  liner_liquid 65%, concealer 17%, liner_pencil 10%
+mascara       1ff034fc.jpg  ->  primer 90%, liner_gel 3%, liner_liquid 3%
+mascara       2b2985be.jpg  ->  primer 89%, concealer 7%, mascara 2%
+mascara       ad5127d8.jpg  ->  mascara 79%, concealer 10%, liner_liquid 7%
+palette       398756f9.jpg  ->  palette 70%, single_shadow 11%, blend_brush 8%
+palette       3af19ddd.jpg  ->  palette 45%, blend_brush 22%, flat_brush 21%
+palette       4c293a01.jpg  ->  palette 54%, single_shadow 42%, concealer 3%
+palette       63f72c2e.jpg  ->  liner_gel 40%, single_shadow 11%, concealer 10%
+palette       c8fc9d4d.jpg  ->  primer 43%, mascara 22%, liner_liquid 14%
+palette       fd1682c0.jpg  ->  palette 84%, single_shadow 8%, concealer 7%

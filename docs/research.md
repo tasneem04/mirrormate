@@ -94,5 +94,9 @@ counted, with the product visible and open:
 - The **shade is never guessed by the model**: the user taps the shade on the frozen photo,
   and the app reads the real pixel color.
 
+Raw output: [product-test/results.txt](product-test/results.txt). Photo sources:
+[product-test/test-photos.md](product-test/test-photos.md). To rerun it on your own photos, run
+`node scripts/product-test.mjs path/to/photos`. Every search and link is in [search-log.md](search-log.md).
+
 **Limits to be honest about:** tubes (mascara, liquid liner, primer) look alike. The model
 can't read the shade name, and it doesn't know brands (on purpose).
