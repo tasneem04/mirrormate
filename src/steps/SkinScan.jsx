@@ -1,6 +1,6 @@
 // Step 1: take or upload a selfie, run the skin/tone/face analysis, show plain-English results.
 import React, { useEffect, useRef, useState } from 'react';
-import { startCamera, stopCamera, snapshot, fileToDataUrl } from '../lib/camera.js';
+import { startCamera, stopCamera, cameraErrorMessage, snapshot, fileToDataUrl } from '../lib/camera.js';
 import { analyzeSelfie, demo, setPasscode } from '../lib/api.js';
 import { buildProfile, profileCards } from '../lib/skinSummary.js';
 import { NAME } from '../brand.js';
@@ -48,9 +48,9 @@ export default function SkinScan({ session, update, next, config }) {
     setError('');
     setPhase('camera');
     try {
-      streamRef.current = await startCamera(videoRef.current);
-    } catch {
-      setError('Could not open the camera. Allow camera access, or upload a photo instead.');
+      streamRef.current = await startCamera(videoRef);
+    } catch (e) {
+      setError(cameraErrorMessage(e));
       setPhase('choose');
     }
   }

@@ -1,15 +1,55 @@
 // Webcam helpers.
 
-export async function startCamera(video, { width = 1280, height = 720 } = {}) {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user', width: { ideal: width }, height: { ideal: height } },
-    audio: false,
-  });
+export async function startCamera(videoOrRef, { width = 1280, height = 720 } = {}) {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    const e = new Error('unsupported');
+    e.name = window.isSecureContext ? 'UnsupportedBrowser' : 'InsecureContext';
+    throw e;
+  }
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: width }, height: { ideal: height } },
+      audio: false,
+    });
+  } catch (e) {
+    if (e.name === 'OverconstrainedError') {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    } else throw e;
+  }
+  // The <video> may only mount after the screen switches to camera mode; wait for it.
+  let video = videoOrRef?.current !== undefined ? videoOrRef.current : videoOrRef;
+  for (let i = 0; !video && i < 60; i++) {
+    await new Promise((r) => requestAnimationFrame(r));
+    video = videoOrRef?.current !== undefined ? videoOrRef.current : null;
+  }
+  if (!video) { stream.getTracks().forEach((t) => t.stop()); throw new Error('no video element'); }
   video.srcObject = stream;
   video.playsInline = true;
   video.muted = true;
   await video.play();
   return stream;
+}
+
+// Plain-words reason the camera didn't open.
+export function cameraErrorMessage(e) {
+  switch (e?.name) {
+    case 'NotAllowedError':
+    case 'SecurityError':
+      return 'Camera is blocked. Tap the camera or lock icon next to the web address, choose Allow, then try again. Or upload a photo.';
+    case 'NotFoundError':
+    case 'OverconstrainedError':
+      return 'No camera found on this device. Upload a photo instead.';
+    case 'NotReadableError':
+    case 'AbortError':
+      return 'The camera is busy in another app or tab. Close it and try again.';
+    case 'UnsupportedBrowser':
+      return 'This browser can\'t use the camera (in-app browsers often can\'t). Open the link in Chrome or Safari.';
+    case 'InsecureContext':
+      return 'The camera needs a secure https link. Open the https:// address.';
+    default:
+      return 'Could not open the camera. Allow camera access, or upload a photo instead.';
+  }
 }
 
 export function stopCamera(stream) {

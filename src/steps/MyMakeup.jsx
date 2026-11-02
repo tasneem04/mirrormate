@@ -2,7 +2,7 @@
 // (free in-browser image model), you tap the shade, and it says whether it suits your skin.
 // Then it checks which tools the chosen look needs that you don't have.
 import React, { useEffect, useRef, useState } from 'react';
-import { startCamera, stopCamera } from '../lib/camera.js';
+import { startCamera, stopCamera, cameraErrorMessage } from '../lib/camera.js';
 import { PRODUCTS, productById, shadeVerdict, sampleColor, missingTools, TOOL_SWAPS, productAdvice, formulaNotes, PRODUCT_KNOWLEDGE, FIT, LEVEL_TEXT, identifyWins } from '../lib/products.js';
 import { getConfig, smartIdentify } from '../lib/api.js';
 import { classifyProduct, loadClassifier, readLabel, mergeLabelHint } from '../lib/productVision.js';
@@ -80,12 +80,12 @@ export default function MyMakeup({ session, update, next, back }) {
   async function openCamera() {
     setError('');
     try {
-      streamRef.current = await startCamera(videoRef.current);
+      streamRef.current = await startCamera(videoRef);
       setCamOn(true);
       // Start downloading the image model in the background.
       loadClassifier((pct) => setBusy(pct < 100 ? `Loading the product model... ${pct}%` : '')).catch(() => {});
-    } catch {
-      setError('Could not open the camera. You can still pick items from the list below.');
+    } catch (e) {
+      setError(cameraErrorMessage(e));
     }
   }
 
