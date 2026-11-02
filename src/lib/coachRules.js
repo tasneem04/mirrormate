@@ -201,6 +201,11 @@ export const STEP_INFO = {
 export function stepHow(step, profile) {
   const how = STEP_INFO[step]?.how || '';
   if (step === 'crease' && profile?.eyelid === 'Hooded-lid') return `${how} With hooded lids, go just above the fold and check with your eyes open.`;
+  if (step === 'crease' && profile?.eyelid === 'Single-lid') return 'Fluffy brush, a matte shade. Blend it up from the lashes in a soft gradient. No need to draw a crease.';
+  if (step === 'outer' && profile?.eyelid === 'Deep-Set') return `${how} Deep-set eyes: keep the dark shade to the outer corner and a light shade on the lid.`;
+  if (step === 'wing' && (profile?.eyeAngle === 'Downturned' || profile?.eyelid === 'Hooded-lid')) return `${how} Angle it up, not straight out, so it stays visible.`;
+  if (step === 'prep' && profile?.oily) return 'Pat a thin layer of eye primer on your lids and wait 30 seconds. Oily lids need it most. Sit facing the camera in good light.';
+  if (step === 'prep' && profile?.dry) return 'Moisturize, wait a minute, then a thin layer of primer or concealer. Sit facing the camera in good light.';
   return how;
 }
 
@@ -313,8 +318,8 @@ export const NEXT_TIME = {
   crease_higher: 'Find your fold by looking straight ahead. Put the crease shade just above it.',
   crease_lower: 'Keep the crease shade under the brow bone. Too high can look heavy.',
   crease_sym: 'Do one eye, then check the other side in the mirror before you start.',
-  blend_more: 'Blend with light side-to-side "windshield wiper" moves until there is no hard edge.',
-  liner_close: 'Keep liner tight to the lashes. Tilt your chin up and look down into the mirror.',
+  blend_more: 'Blend with light side-to-side "windshield wiper" moves with a clean brush until there is no hard edge. Build color in thin layers.',
+  liner_close: 'Keep liner tight to the lashes. Tilt your chin up and look down into the mirror. Fill gaps by tightlining the upper waterline.',
   steady: 'Rest your elbow on a table and use short dashes, then join them up.',
   wing_low: 'Line the wing up with the end of your brow. A card held at that angle helps.',
   wing_high: 'A lower wing looks softer. Aim at the brow tail, not the middle of the brow.',

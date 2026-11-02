@@ -52,6 +52,7 @@ export function buildProfile(scan) {
     skinType,
     oily: /oily|combination/i.test(skinType || '') || (oiliness != null && oiliness < 55),
     dry: /dry/i.test(skinType || '') || (moisture != null && moisture < 50),
+    sensitive: /redness|sensitive/i.test(skinType || ''),
     darkCircles: darkCircles != null && darkCircles < 60,
     scores: { oiliness, moisture, darkCircles },
     eyeColorName: color.eye_color_name || null,
@@ -71,8 +72,8 @@ const UNDERTONE_TEXT = {
 };
 
 const EYELID_TEXT = {
-  'Hooded-lid': 'Hooded lids: put crease color a little above your natural fold so it shows with eyes open. The coach aims higher for you.',
-  'Single-lid': 'Single lids: blend color upward in a soft gradient. A slightly thicker liner shows better.',
+  'Hooded-lid': 'Hooded lids: put crease color a little above your natural fold, and check with eyes open. Angle the wing up so the hood does not hide it. The coach aims higher for you.',
+  'Single-lid': 'Single lids: build a gradient, darkest at the lashes, lighter going up. No fake crease. A thicker, lifted liner shows with eyes open.',
   'Double-lid': 'Visible fold: classic crease placement works well for you.',
   'Deep-Set': 'Deep-set eyes: lighter shades on the lid bring them forward. Keep dark colors to the outer corner.',
 };
@@ -84,9 +85,18 @@ const SHAPE_TEXT = {
 };
 
 const ANGLE_TEXT = {
-  Downturned: 'Outer corners point down a little: a lifted wing helps open the eye.',
+  Downturned: 'Outer corners point down a little: aim shadow and wing up toward the brow tail, and keep dark liner off the outer lower lashes.',
   Upturned: 'Outer corners lift up: follow your natural shape, keep the wing short.',
 };
+
+// Skin prep before eye makeup, by skin type (docs/knowledge.md).
+export function prepTip(p) {
+  if (p?.sensitive) return 'Sensitive skin: use a fragrance-free moisturizer, patch-test new products, and skip the inner waterline.';
+  if (p?.oily && p?.dry) return 'Combination skin: light moisturizer all over, eye primer on the lids, a little powder on the T-zone.';
+  if (p?.oily) return 'Oily skin: gentle cleanse, oil-free moisturizer, then eye primer. Set the lids with a little powder.';
+  if (p?.dry) return 'Dry skin: cleanse, moisturize and wait a minute before makeup. Use a hydrating primer or cream shadow.';
+  return 'Cleanse, a light moisturizer, wait a minute, then a thin layer of eye primer or concealer.';
+}
 
 // Cards for the results screen: [{ title, text, swatch? }]
 export function profileCards(p) {
@@ -108,6 +118,7 @@ export function profileCards(p) {
     text: eyeBits.join(' ') || 'Most eye looks will work for you.',
     swatch: p.eyeColor,
   });
+  cards.push({ title: 'Before makeup', text: prepTip(p) });
   if (p.darkCircles) {
     cards.push({ title: 'Under the eyes', text: 'Some darkness under the eyes. A little concealer before shadow makes the look brighter.' });
   }
