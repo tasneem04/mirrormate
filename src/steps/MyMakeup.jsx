@@ -3,8 +3,8 @@
 // Then it checks which tools the chosen look needs that you don't have.
 import React, { useEffect, useRef, useState } from 'react';
 import { startCamera, stopCamera } from '../lib/camera.js';
-import { PRODUCTS, productById, shadeVerdict, sampleColor, missingTools, TOOL_SWAPS } from '../lib/products.js';
-import { classifyProduct, loadClassifier } from '../lib/productVision.js';
+import { PRODUCTS, productById, shadeVerdict, sampleColor, missingTools, TOOL_SWAPS, productAdvice, formulaNotes, PRODUCT_KNOWLEDGE } from '../lib/products.js';
+import { classifyProduct, loadClassifier, readLabel, mergeLabelHint } from '../lib/productVision.js';
 
 const VERDICT_LABEL = { great: 'Great match', ok: 'Works', careful: 'Be careful' };
 
@@ -41,6 +41,7 @@ export default function MyMakeup({ session, update, next, back }) {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [items, setItems] = useState(session.items || []);
+  const [label, setLabel] = useState(null);        // { text } read from the pack, or null
 
   useEffect(() => () => stopCamera(streamRef.current), []);
   useEffect(() => { update({ items }); }, [items]); // keep App state in sync
@@ -63,6 +64,7 @@ export default function MyMakeup({ session, update, next, back }) {
     frozenRef.current = canvas;
     setFrozen(canvas.toDataURL('image/jpeg', 0.9));
     setGuesses(null);
+    setLabel(null);
     setBusy('Looking at your item...');
     try {
       const r = await classifyProduct(canvas);
@@ -75,6 +77,23 @@ export default function MyMakeup({ session, update, next, back }) {
       }
     } catch (e) {
       setError('The product model could not run here. Pick the item from the list instead.');
+      console.error(e);
+    } finally {
+      setBusy('');
+    }
+  }
+
+  // Optional: read the text on the pack with a second, bigger model (downloads once).
+  async function onReadLabel() {
+    setError('');
+    setBusy('Reading the label...');
+    try {
+      const r = await readLabel(frozenRef.current, (pct) => setBusy(pct < 100 ? `Loading the label reader (once, ~550 MB)... ${pct}%` : 'Reading the label...'));
+      setLabel({ text: r.text });
+      if (r.hint?.not) setError(r.hint.not);
+      else if (r.hint?.id) { setGuesses((g) => mergeLabelHint(g, r.hint)); setSure(true); }
+    } catch (e) {
+      setError('Could not read the label here. Pick the item from the guesses or the list.');
       console.error(e);
     } finally {
       setBusy('');
@@ -109,7 +128,10 @@ export default function MyMakeup({ session, update, next, back }) {
 
   function addItem(product, shade) {
     const verdict = shade ? shadeVerdict(product, shade, profile) : null;
-    setItems((list) => [...list, { key: Date.now() + Math.random(), productId: product.id, shade, verdict }]);
+    const name = label?.text || null;
+    const notes = [...formulaNotes(name, profile), ...productAdvice(product.id, profile)].slice(0, 2);
+    setItems((list) => [...list, { key: Date.now() + Math.random(), productId: product.id, shade, verdict, name, notes }]);
+    setLabel(null);
   }
 
   const owned = items.map((i) => i.productId);
@@ -151,6 +173,8 @@ export default function MyMakeup({ session, update, next, back }) {
           {guesses && guesses.length > 0 && (
             <div className="card stack">
               <h3>{sure ? 'Looks like' : 'Maybe'} your {guesses[0].product.label.toLowerCase()}. Right?</h3>
+              {label?.text && <p className="small" style={{ margin: 0 }}>Label says: <strong>{label.text}</strong></p>}
+              {label && !label.text && <p className="small muted" style={{ margin: 0 }}>No clear text on the label. Turn the name toward the camera.</p>}
               <div className="row">
                 {guesses.map((g) => (
                   <button key={g.product.id} className="chip" onClick={() => confirm(g.product)}>
@@ -159,6 +183,8 @@ export default function MyMakeup({ session, update, next, back }) {
                 ))}
                 <button className="chip" onClick={() => { setGuesses(null); setFrozen(null); }}>None of these</button>
               </div>
+              <p className="small muted" style={{ margin: 0 }}>{PRODUCT_KNOWLEDGE[guesses[0].product.id]?.what}</p>
+              {!label && <button className="btn ghost small" onClick={onReadLabel} disabled={Boolean(busy)}>Read the label</button>}
               <p className="small muted" style={{ margin: 0 }}>Not right? Pick it from the list below.</p>
             </div>
           )}
@@ -194,7 +220,9 @@ export default function MyMakeup({ session, update, next, back }) {
                       <strong>{p.label}</strong>
                       {it.verdict && <span className={`badge ${it.verdict.level}`}>{VERDICT_LABEL[it.verdict.level]}</span>}
                     </div>
+                    {it.name && <p className="small" style={{ margin: 0 }}>{it.name}</p>}
                     {it.verdict && <p className="small muted" style={{ margin: 0 }}>{it.verdict.text}</p>}
+                    {(it.notes || productAdvice(it.productId, profile).slice(0, 2)).map((n) => <p key={n} className="small muted" style={{ margin: 0 }}>{n}</p>)}
                   </div>
                   <button className="btn ghost small" onClick={() => setItems((l) => l.filter((x) => x.key !== it.key))} aria-label={`Remove ${p.label}`}>×</button>
                 </div>

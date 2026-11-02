@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "spike": "node --env-file-if-exists=.env scripts/spike-youcam.mjs",
     "units": "node --env-file-if-exists=.env scripts/units.mjs",
-    "test": "node --test"
+    "test": "node --test \"test/**/*.test.js\""
   },
   "engines": {
     "node": ">=20"

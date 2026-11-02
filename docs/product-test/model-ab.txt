@@ -1,0 +1,8 @@
+Model A/B, 2026-11-02, same 26 Wikimedia photos and labels as results.txt. top1/top3 = correct first guess / in top 3 (lipstick counts as correct when 'not an eye product: lipstick'). The 'brush' folder includes 3 palette+brush photos, so absolute numbers are low; compare models only.
+SUMMARY Xenova/clip-vit-base-patch32 (q8, the app default): top1 8/26, top3 12/26, 62 ms/img
+SUMMARY Xenova/clip-vit-base-patch32 (fp32): top1 9/26, top3 15/26, 67 ms/img
+SUMMARY Xenova/clip-vit-base-patch16 (q8): top1 4/26, top3 11/26, 110 ms/img
+SUMMARY Xenova/siglip-base-patch16-224 (q8): top1 5/26, top3 8/26, 117 ms/img
+SUMMARY Marqo/marqo-fashionSigLIP (q8, text+vision models): top1 8/26, top3 16/26, 42 ms/img
+
+Florence-2-base-ft caption+OCR mapped to a type by typeFromText: 5/26 (types alone are weak; but OCR read brand/name text well, e.g. 'chi-fi WATERPROOF CREME MASCARA', 'BE A NATURAL EYESHADOW NUDE PALETTE', 'EYE DRAMA BOLD BLACK', 'MAXFACTOR Wand', 'SHISEIDO', 'AVON', 'Fabulash'). ~1-1.5 s per task on CPU (Node). Quantized vision encoder = garbage text; keep it fp32.

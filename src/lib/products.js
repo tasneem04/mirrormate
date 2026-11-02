@@ -109,3 +109,129 @@ export function sampleColor(canvas, x, y, radius = 6) {
   if (!n) return null;
   return '#' + [r, g, b].map((v) => Math.round(v / n).toString(16).padStart(2, '0')).join('').toUpperCase();
 }
+
+// ---------- Product knowledge (see docs/knowledge.md for sources) ----------
+// What each product is for, and how it behaves on each skin type. No brands.
+//   good: who it suits best. tips: { oily, dry, sensitive, any } short coach-style lines.
+export const PRODUCT_KNOWLEDGE = {
+  palette: {
+    what: 'Powder shadows. Mattes for crease and depth, shimmers for the lid.',
+    tips: {
+      oily: 'Powder suits oily lids. Use a primer under it so it does not crease.',
+      dry: 'Powder can cling to dry patches. Moisturize first, use satin or matte, thin layers.',
+      sensitive: 'Tap off extra powder to cut fallout near the eyes.',
+      any: 'Mattes go in the crease, shimmer on the center of the lid.',
+    },
+  },
+  single_shadow: {
+    what: 'One powder shade. Good as a crease or lid color.',
+    tips: {
+      oily: 'Powder holds best on oily lids over a primer.',
+      dry: 'Moisturize first. Satin finishes look smoother on dry lids.',
+      any: 'Pat it on for color, sweep it for a soft wash.',
+    },
+  },
+  liner_pencil: {
+    what: 'The easiest liner. Soft, smudgeable, good for beginners.',
+    tips: {
+      oily: 'Kohl pencils smudge on oily lids. A waterproof or gel pencil lasts longer.',
+      sensitive: 'Keep it on the lash line, not the inner waterline, if your eyes water.',
+      any: 'Warm the tip on your hand for a smoother line. Smudge with a swab for a smoky look.',
+    },
+  },
+  liner_liquid: {
+    what: 'Sharpest line, best for wings. Hardest to control.',
+    tips: {
+      oily: 'Liquid liner lasts well on oily lids once dry.',
+      dry: 'Can flake on very dry lids. Moisturize, then let it dry before liner.',
+      any: 'Dots first, then connect. Keep your eye open while it dries.',
+    },
+  },
+  liner_gel: {
+    what: 'Rich, long-wearing liner. Easier than liquid with an angled brush.',
+    tips: {
+      oily: 'Gel is smudge-resistant: a good pick for oily lids.',
+      any: 'Work fast: gel sets quickly. Close the lid tightly after each use.',
+    },
+  },
+  mascara: {
+    what: 'Lengthens and darkens lashes. Always the last eye step.',
+    tips: {
+      oily: 'Tubing or waterproof mascara smudges less under oily lids.',
+      sensitive: 'Replace it every 3 months. Stop if your eyes sting.',
+      any: 'Wiggle at the roots, then pull up. Wipe the wand first to avoid clumps.',
+    },
+  },
+  primer: {
+    what: 'Grips shadow and stops creasing. Most useful on oily or hooded lids.',
+    tips: {
+      oily: 'A must for oily lids. A thin layer, then wait 30 seconds.',
+      dry: 'Pick a hydrating one. A thin layer is enough.',
+      any: 'Use a rice-grain amount for both lids.',
+    },
+  },
+  concealer: {
+    what: 'Evens the lid and under the eyes. Can act as a shadow base.',
+    tips: {
+      oily: 'Set it with a little powder before shadow, or it will crease.',
+      dry: 'Moisturize first so it does not settle into lines.',
+      any: 'Tap, do not rub. A thin layer goes further.',
+    },
+  },
+  flat_brush: { what: 'Packs color on the lid.', tips: { any: 'Pat, do not swipe, for the most color.' } },
+  blend_brush: { what: 'Softens edges and places crease color.', tips: { any: 'Clean brush, light hand, small side-to-side moves.' } },
+  angled_brush: { what: 'For gel liner, tightlining, or a thin line of dark shadow.', tips: { any: 'Press along the lashes in short dashes.' } },
+  swab: { what: 'Fixes mistakes and smudges liner.', tips: { any: 'A swab with a dot of micellar water cleans up a wing.' } },
+};
+
+// Advice lines for a product and a skin profile: the matching skin-type tips first, then the general one.
+export function productAdvice(productId, profile) {
+  const k = PRODUCT_KNOWLEDGE[productId];
+  if (!k) return [];
+  const out = [];
+  if (profile?.oily && k.tips.oily) out.push(k.tips.oily);
+  if (profile?.dry && k.tips.dry) out.push(k.tips.dry);
+  if (profile?.sensitive && k.tips.sensitive) out.push(k.tips.sensitive);
+  if (k.tips.any) out.push(k.tips.any);
+  return out;
+}
+
+// Map words from the label model (caption or text it read) to a product type.
+// Order matters: specific words first. Returns { id } for an eye product, { not } for others, or null.
+const TEXT_RULES = [
+  [/mascara|lash/i, 'mascara'],
+  [/gel\s*(eye)?liner/i, 'liner_gel'],
+  [/liquid\s*(eye)?liner|eyeliner pen|felt.?tip/i, 'liner_liquid'],
+  [/kohl|kajal|(eye)?liner pencil|eye pencil/i, 'liner_pencil'],
+  [/primer/i, 'primer'],
+  [/concealer/i, 'concealer'],
+  [/palette|eye\s*shadows?|eyeshadow/i, 'palette'],
+  [/cotton (swab|bud)|q-?tip/i, 'swab'],
+  [/blend(ing)? brush|fluffy brush/i, 'blend_brush'],
+  [/angled brush|liner brush/i, 'angled_brush'],
+  [/(flat|shader) brush/i, 'flat_brush'],
+  [/eyeliner|liner/i, 'liner_liquid'],
+];
+const NOT_EYE_RULES = [
+  [/lipstick|lip balm|lip gloss|lip liner/i, 'That looks like a lip product. This coach is for eye products only.'],
+  [/nail polish/i, 'That looks like nail polish, not an eye product.'],
+  [/foundation|bb cream|blush|bronzer/i, 'That looks like a face product. This coach is for eye products only.'],
+];
+export function typeFromText(text) {
+  if (!text) return null;
+  for (const [re, id] of TEXT_RULES) if (re.test(text)) return { id };
+  for (const [re, say] of NOT_EYE_RULES) if (re.test(text)) return { not: say };
+  return null;
+}
+
+// Formula words often printed on the pack (read by the label model) and what they mean for this skin.
+const FORMULA_RULES = [
+  { re: /water\s*proof|smudge\s*proof|long\s*wear|24\s*h/i, tip: () => 'Waterproof or long-wear: stays put on oily lids. Remove it with an oil cleanser.' },
+  { re: /cre+me|cream|balm|stick/i, tip: (p) => (p?.oily ? 'Cream formula: it can crease on oily lids. Use a primer and set it with powder.' : 'Cream formula: easy to blend with a finger, kind to dry lids.') },
+  { re: /matte/i, tip: () => 'Matte: best for the crease and for depth. It also hides lid texture.' },
+  { re: /shimmer|glitter|metallic|foil|sparkle/i, tip: (p) => (p?.dry ? 'Shimmer can show dry texture. Keep it to the center of the lid.' : 'Shimmer: pat it on the center of the lid with a finger or damp brush.') },
+];
+export function formulaNotes(text, profile) {
+  if (!text) return [];
+  return FORMULA_RULES.filter((r) => r.re.test(text)).map((r) => r.tip(profile));
+}
