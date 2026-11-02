@@ -144,6 +144,32 @@ Avoid on deep skin: pale chalky mattes, ashy grey, icy silver, low-pigment shade
 
 With `GEMINI_API_KEY` set, "Smart identify" sends one product photo to Gemini Flash (server side, cached by image hash) and gets back type, brand/name, finish, formula and good-for/bad-for traits. Its type overrides the on-device guess only at confidence >= 0.7. Without a key the button is hidden.
 
+## 12. Brows step by step
+
+The "Brows" step (after the eye coach, optional) teaches brows in 4 steps (`shared/brows.js`, `src/steps/Brows.jsx`), each with a YouCam eyebrow try-on picture whose color builds step by step (pattern `Original12` follows the person's own brow shape, so it stays natural):
+
+1. **Map the shape** (pencil or brush handle). Start: straight up from the nose wing past the inner eye corner. Arch: nose wing through the outer edge of the iris. End: nose wing past the outer eye corner. The live view draws these three lines from the face landmarks.
+2. **Outline and fill with light strokes** (sharp pencil, or angled brush + powder). Short hair-like flicks in the direction of growth; front soft, most color from arch to tail.
+3. **Blend with a spoolie.** Brush up and out so no line looks drawn on; soften the front most.
+4. **Set with gel** (clear or tinted).
+
+**Live check** (`src/lib/browCoach.js`): the same color grid method as the eyes, on a grid that follows each brow (t = 0 at the start line, 1 at the end line; v = brow thicknesses from the brow midline). It compares the brows now with a "before" of the bare brows and, when step pictures exist, with the expected change from bare to that step. Rules: color coverage, spill outside the brow, tail length vs the end line, arch position (color-weighted height peak vs the arch line), left/right symmetry and, from step 3, a hard front.
+
+**Tools:** spoolie (level 1), brow powder (1), sharp pencil (1-2), angled brush (2), clear/tinted gel (1), pomade (3, easy to overdo).
+
+**Brow shade by hair color and skin depth** (the app picks the hair class from the brow color in the tone scan):
+
+| Brow hair | Light skin | Medium skin | Deep skin |
+|---|---|---|---|
+| Black | soft black-brown #3a2e2a | espresso #2f2522 | soft black #261d1a |
+| Dark brown | dark brown #4a3a31 | dark brown #3d2e27 | espresso #2e221e |
+| Brown | medium brown #6b5344 | medium brown #5a4436 | dark brown #3d2e27 |
+| Red / auburn | auburn #7a5040 | warm auburn #6a4535 | deep auburn #4f3328 |
+| Blonde | taupe #9a8270 | light ash brown #85705f | soft brown #6b5648 |
+| Grey / white | soft grey #8a8580 | grey-taupe #757070 | charcoal grey #5e5a58 |
+
+Rule of thumb: one shade lighter than dark hair, up to two shades darker than very fair hair; never pure black on fair skin. All three sample faces read as dark-brown brows: face-1 (deep) gets espresso #2e221e, face-4 (fair) dark brown #4a3a31, face-5 (olive) dark brown #3d2e27.
+
 ## Sources
 - Cleveland Clinic, Understanding skin types: https://health.clevelandclinic.org/understanding-skin-types
 - CeraVe, What skin type do I have: https://www.cerave.com/skin-smarts/skincare-tips-advice/what-skin-type-do-i-have
@@ -158,6 +184,9 @@ With `GEMINI_API_KEY` set, "Smart identify" sends one product photo to Gemini Fl
 - Merle Norman, Artistry for eye shapes: https://www.merlenorman.com/artistry-for-eye-shapes.html
 - Byrdie, How to keep eyeshadow from creasing: https://www.byrdie.com/how-to-keep-eyeshadow-from-creasing-7483153
 - The Authored, Cream vs powder eyeshadow: https://theauthored.com/makeup/eyes/cream-vs-powder-eyeshadow/
+- IT Cosmetics, Eyebrow mapping: https://www.itcosmetics.com/how-to-shape-your-eyebrows.html
+- Ipsy, Anastasia Soare step-by-step eyebrow tutorial: https://www.ipsy.com/blog/anastasia-soare-eyebrow-tutorial
+- W Magazine, How to shape your brows at home: https://www.wmagazine.com/beauty/how-to-shape-eyebrows-at-home
 - The Authored, Makeup for mature eyes: https://theauthored.com/beauty-guides/features-and-skin-tone/makeup-for-mature-eyes/
 - Glamour, Eyeshadow for mature skin: https://www.glamour.com/story/how-to-apply-eyeshadow-for-mature-skin
 - Allure, Best eyeshadow for mature skin: https://www.allure.com/story/best-eye-shadow-for-mature-skin

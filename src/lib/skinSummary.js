@@ -48,6 +48,10 @@ export function buildProfile(scan) {
 
   return {
     skinHex,
+    skinError: scan?.skin?.error || null,
+    // Brow shade comes from the measured brow color plus skin depth (YouCam's hair color is
+    // unreliable on our samples: two different heads both came back "Blonde").
+    browHex: color.eyebrow_color || null,
     undertone: skinHex ? undertoneFromHex(skinHex) : 'neutral',
     depth: skinHex ? depthFromHex(skinHex) : 'medium',
     skinType,
@@ -106,7 +110,9 @@ export function profileCards(p) {
     title: 'Skin type',
     text: p.skinType
       ? `${p.skinType}.${p.oily ? ' Your lids may get oily: an eye primer helps shadow stay put.' : ''}${p.dry ? ' Your skin looks dry: moisturize first, and use creamy or satin shadows.' : ''}`
-      : 'Could not read this one. Try a photo with more even light.',
+      : p.skinError === 'error_large_face_angle'
+        ? 'Could not read this one: the face is turned a little. Your colors still come from your skin tone.'
+        : 'Could not read this one. Try a photo with more even light.',
   });
   cards.push({
     title: 'Skin tone',

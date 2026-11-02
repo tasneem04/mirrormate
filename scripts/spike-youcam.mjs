@@ -12,6 +12,7 @@ import path from 'node:path';
 import { uploadImage, startTask, waitForTask, vtoImageUrl, getUnits } from '../api/_youcam.js';
 import { undertoneFromHex, depthFromHex } from '../shared/color.js';
 import { LOOK_IDS, stageIds } from '../shared/looks.js';
+import { BROWS_ID, BROW_STAGE_IDS } from '../shared/brows.js';
 import { buildProfile, recommendedLook } from '../src/lib/skinSummary.js';
 
 const args = process.argv.slice(2);
@@ -31,7 +32,8 @@ if (!selfiePath) {
 const DEMO = path.resolve('src/demo');
 const OUT = path.resolve(outArg || DEMO);
 fs.mkdirSync(OUT, { recursive: true });
-const scanFile = path.join(DEMO, 'scan.json');
+// --out=src/demo/face-4 keeps a second sample face (its own selfie, scan and try-ons) apart.
+const scanFile = path.join(OUT, 'scan.json');
 
 const showUnits = async (label) => {
   try { console.log(label, JSON.stringify(await getUnits())); } catch (e) { console.log(label, 'unavailable:', e.message); }
@@ -41,7 +43,7 @@ await showUnits('Units before:');
 
 const buffer = fs.readFileSync(selfiePath);
 const contentType = selfiePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-if (path.resolve(selfiePath) !== path.join(DEMO, 'selfie.jpg')) fs.copyFileSync(selfiePath, path.join(DEMO, 'selfie.jpg'));
+if (path.resolve(selfiePath) !== path.join(OUT, 'selfie.jpg')) fs.copyFileSync(selfiePath, path.join(OUT, 'selfie.jpg'));
 
 console.log('Uploading selfie...');
 const fileId = await uploadImage(buffer, contentType);
@@ -74,19 +76,24 @@ console.log('Skin color', skinHex, '-> undertone', undertone, 'depth', depth);
 
 // 2. One try-on per look (1 unit each).
 const failed = ['skin', 'tone', 'face'].filter((t) => scan[t]?.status !== 'success');
-if (failed.length) { console.error('Scan failed for', failed.join(', '), '- skipping try-ons.'); process.exit(1); }
+// Colors come from the tone scan, so try-ons only need that one. A failed skin or face scan
+// (e.g. error_large_face_angle) just leaves that results card empty.
+if (failed.includes('tone')) { console.error('Tone scan failed - skipping try-ons.'); process.exit(1); }
+if (failed.length) console.warn('Scan failed for', failed.join(', '), '- continuing (colors come from the tone scan).');
 const best = recommendedLook(buildProfile(scan));
-const looks = !looksArg ? LOOK_IDS : looksArg === 'best' ? [best] : looksArg.split(',').filter((l) => LOOK_IDS.includes(l));
+const looks = !looksArg ? LOOK_IDS : looksArg === 'best' ? [best] : looksArg.split(',').filter((l) => LOOK_IDS.includes(l) || l === BROWS_ID);
+const browHex = scan.tone?.results?.color?.eyebrow_color || null;
 console.log('Recommended look:', best, '- trying on:', looks.join(', '));
 for (const lookId of looks) {
-  const all = stageIds(lookId);
+  // Brows: 'map' is the bare face (vto-bare), so only fill/blend/gel are rendered.
+  const all = lookId === BROWS_ID ? BROW_STAGE_IDS.filter((x) => x !== 'map') : stageIds(lookId);
   const final = all[all.length - 1];
   const stages = !stagesArg ? [final] : stagesArg === 'all' ? all : stagesArg.split(',').filter((st) => all.includes(st));
   for (const stage of stages) {
-    const name = stage === final ? `vto-${lookId}` : `vto-${lookId}-${stage}`;
+    const name = stage === final && lookId !== BROWS_ID ? `vto-${lookId}` : `vto-${lookId}-${stage}`;
     const out = path.join(OUT, `${name}.jpg`);
     if ((fs.existsSync(out) || fs.existsSync(out.replace(/\.jpg$/, '.png'))) && !force && !redoVto) { console.log(`${name}: already saved`); continue; }
-    const taskId = await startTask('vto', fileId, { lookId, undertone, depth, stage });
+    const taskId = await startTask('vto', fileId, { lookId, undertone, depth, stage, browHex });
     const r = await waitForTask('vto', taskId);
     const url = vtoImageUrl(r.results);
     console.log(`${name}: ${r.status}`, r.error || '', url ? '' : JSON.stringify(r).slice(0, 300));

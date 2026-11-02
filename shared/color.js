@@ -41,11 +41,20 @@ export function undertoneFromHex(hex) {
   return 'neutral';
 }
 
-// Skin depth from lightness.
+// Individual Typology Angle (Chardon et al. 1991): ITA = atan((L - 50) / b) in degrees.
+// Standard skin classes: > 55 very light, 41-55 light, 28-41 intermediate, 10-28 tan,
+// -30-10 brown, < -30 dark. ITA uses yellowness too, so a fair face in soft shade still
+// reads as light (plain lightness put a freckled fair face in "medium").
+export function itaFromHex(hex) {
+  const [L, , b] = hexToLab(hex);
+  return (Math.atan2(L - 50, Math.max(b, 1)) * 180) / Math.PI;
+}
+
+// Skin depth for shade choice: light (ITA > 41), medium (intermediate/tan, 10-41), deep (< 10).
 export function depthFromHex(hex) {
-  const [L] = hexToLab(hex);
-  if (L >= 68) return 'light';
-  if (L >= 48) return 'medium';
+  const ita = itaFromHex(hex);
+  if (ita > 41) return 'light';
+  if (ita > 10) return 'medium';
   return 'deep';
 }
 

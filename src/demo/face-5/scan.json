@@ -1,0 +1,63 @@
+{
+  "skin": {
+    "status": "error",
+    "results": null,
+    "error": "error_large_face_angle",
+    "errorMessage": "The face in the input image is turned or tilted too far."
+  },
+  "tone": {
+    "status": "success",
+    "results": {
+      "color": {
+        "eye_color": "#17100f",
+        "eye_color_name": "Brown",
+        "lip_color": "#a14d53",
+        "eyebrow_color": "#3e3834",
+        "skin_color": "#b38f73",
+        "hair_color": "#000000",
+        "hair_color_name": "Black"
+      },
+      "face_quality": {
+        "has_face": true,
+        "area": "good",
+        "frontal": "notgood",
+        "lighting": "good",
+        "faceangle": "leftward"
+      }
+    },
+    "error": null,
+    "errorMessage": null
+  },
+  "face": {
+    "status": "success",
+    "results": {
+      "nose": {},
+      "agegender": {},
+      "eyelid": {
+        "left_eyelid": "Double-lid",
+        "right_eyelid": "Double-lid",
+        "left_angle": "Upturned",
+        "right_angle": "Upturned",
+        "left_shape": "Almond",
+        "right_shape": "Almond"
+      },
+      "eyebrow": {
+        "left_shape": "Straight",
+        "right_shape": "Soft Angled"
+      },
+      "color": {},
+      "face_quality": {
+        "has_face": true,
+        "area": "good",
+        "frontal": "notgood",
+        "lighting": "good",
+        "faceangle": "leftward"
+      },
+      "cheekbone": {},
+      "faceshape": "Triangle",
+      "facialratio": {}
+    },
+    "error": null,
+    "errorMessage": null
+  }
+}

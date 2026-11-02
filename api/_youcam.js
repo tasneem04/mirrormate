@@ -9,6 +9,7 @@
 // Units are only charged when a task succeeds.
 
 import { buildEffects, LOOK_IDS, UNDERTONES, DEPTHS, stageIds } from '../shared/looks.js';
+import { BROWS_ID, BROW_STAGE_IDS, buildBrowEffects } from '../shared/brows.js';
 
 const BASE = 'https://yce-api-01.makeupar.com';
 
@@ -41,7 +42,13 @@ export const TASKS = {
   // Makeup virtual try-on = 1 unit.
   vto: {
     path: '/s2s/v2.0/task/makeup-vto',
-    body: (fileId, { lookId, undertone, depth, stage }) => {
+    body: (fileId, { lookId, undertone, depth, stage, browHex }) => {
+      if (lookId === BROWS_ID) {
+        if (stage && stage !== 'bare' && !BROW_STAGE_IDS.includes(stage)) throw new Error('Unknown stage');
+        const hex = /^#[0-9a-f]{6}$/i.test(browHex || '') ? browHex : null;
+        const d = DEPTHS.includes(depth) ? depth : 'medium';
+        return { src_file_id: fileId, effects: buildBrowEffects(stage || 'gel', hex, d), version: '1.0' };
+      }
       if (!LOOK_IDS.includes(lookId)) throw new Error('Unknown look');
       if (!UNDERTONES.includes(undertone)) throw new Error('Unknown undertone');
       if (stage && stage !== 'bare' && !stageIds(lookId).includes(stage)) throw new Error('Unknown stage');

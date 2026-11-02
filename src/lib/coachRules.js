@@ -330,4 +330,11 @@ export const NEXT_TIME = {
   no_hand: 'Keep your hand in view of the camera so the coach can help.',
   face_cam: 'Face the camera straight on. Turning makes the guides less accurate.',
   light: 'Put a lamp or window in front of you, not behind you.',
+  brow_spill: 'Keep brow strokes inside your natural brow line. Clean the edges with a little concealer on a flat brush.',
+  brow_tail_short: 'Hold a pencil from your nose wing past the outer eye corner: that is where your brow tail ends.',
+  brow_tail_long: 'Stop the tail where the nose-wing-to-outer-corner line crosses it. A long tail drags the eye down.',
+  brow_arch: 'Put the highest point of the brow above the outer edge of your iris, looking straight ahead.',
+  brow_cover: 'Fill sparse spots with short, hair-like strokes in the direction the hairs grow.',
+  brow_sym: 'Work on both brows a little at a time instead of finishing one first. Brows are sisters, not twins.',
+  brow_front: 'Keep the front of the brow the softest part: brush it up with a spoolie and add little color there.',
 };

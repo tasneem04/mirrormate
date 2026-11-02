@@ -4,6 +4,8 @@ import { stageIds, stageForStep } from '../../shared/looks.js';
 import { demo, tryOnLook } from './api.js';
 import { loadImageFace } from './tracking.js';
 import { sampleFace } from './zoneCompare.js';
+import { sampleBrows } from './browCoach.js';
+import { BROW_STAGE_IDS, BROWS_ID } from '../../shared/brows.js';
 
 export const STAGE_LABEL = { base: 'Lid', crease: 'Crease', liner: 'Liner', smoke: 'Smoke', wing: 'Wing', lips: 'Lips' };
 
@@ -11,7 +13,8 @@ export const STAGE_LABEL = { base: 'Lid', crease: 'Crease', liner: 'Liner', smok
 export function demoStageImages(lookId) {
   const ids = stageIds(lookId);
   const out = {};
-  const bare = demo.vto('bare');
+  // Samples without a saved bare render use the selfie itself (same photo, no makeup).
+  const bare = demo.vto('bare') || demo.selfie;
   if (bare) out.bare = bare;
   ids.forEach((id, i) => {
     const url = i === ids.length - 1 ? demo.vto(lookId) : demo.vtoStep(lookId, id);
@@ -103,4 +106,37 @@ export async function eyeFocusOf(src) {
   } catch {
     return null;
   }
+}
+
+// ---- Brows: step images and their brow-grid samples ----
+// { map, fill, blend, gel }. 'map' is the bare face (no brow product yet).
+export function demoBrowImages() {
+  const out = { map: demo.vto('bare') || demo.selfie };
+  for (const s of BROW_STAGE_IDS.slice(1)) { const u = demo.vtoStep(BROWS_ID, s); if (u) out[s] = u; }
+  return out;
+}
+
+// Live: one try-on per brow stage (3 units, cached per photo + stage + brow color).
+export async function liveBrowImages({ session, onImage = () => {} }) {
+  const { scanMeta, selfie, profile, goalSteps } = session;
+  const out = { map: goalSteps?.bare || selfie };
+  for (const stage of BROW_STAGE_IDS.slice(1)) {
+    out[stage] = await tryOnLook({ ...scanMeta, dataUrl: selfie, lookId: BROWS_ID, undertone: profile.undertone, depth: profile.depth, stage, browHex: profile.browHex || undefined });
+    onImage(stage, out[stage]);
+  }
+  return out;
+}
+export const liveBrowCost = () => BROW_STAGE_IDS.length - 1;
+
+// Like loadGoalSamples, but samples the brow grid. Returns { face, images, samples }.
+export async function loadBrowSamples(images) {
+  const entries = Object.entries(images).filter(([, v]) => v);
+  if (!entries.length) return null;
+  const loaded = Object.fromEntries(await Promise.all(entries.map(async ([k, v]) => [k, await loadImage(v)])));
+  const ref = loaded.map || Object.values(loaded)[0];
+  const face = (await loadImageFace()).detect(ref).faceLandmarks?.[0];
+  if (!face) return null;
+  const samples = {};
+  for (const [k, im] of Object.entries(loaded)) samples[k] = sampleBrows(pixelsOf(im), face);
+  return { face, images: loaded, samples };
 }

@@ -136,6 +136,30 @@ export function shadeGuide(undertone, depth) {
   return (SHADE_GUIDE[undertone] || SHADE_GUIDE.neutral)[depth] || SHADE_GUIDE.neutral.medium;
 }
 
+// Brows: mapping rules, tools and color rules (the step list and the shade table live in
+// shared/brows.js so the server try-on and the app use the same numbers).
+export { BROW_STAGES, BROW_SHADES, BROW_HAIR_LABEL, browShade } from '../../shared/brows.js';
+export const BROW_GUIDE = {
+  map: {
+    start: 'Straight up from the side of the nose (nose wing), past the inner eye corner.',
+    arch: 'On the line from the nose wing through the outer edge of the iris, looking straight ahead.',
+    end: 'On the line from the nose wing past the outer eye corner. The tail ends no lower than the start.',
+  },
+  tools: {
+    spoolie: 'Brushes hairs up before and after filling, and softens color. Level 1.',
+    pencil: 'Fine, sharp pencil for hair-like strokes and the outline. Level 1-2.',
+    angled_brush: 'Stiff angled brush with brow powder: soft, natural fill. Level 2.',
+    powder: 'Brow powder: the softest fill, good for beginners and for the front of the brow. Level 1.',
+    pomade: 'Brow pomade: more hold and definition, easy to overdo. Level 3.',
+    gel: 'Clear or tinted brow gel: sets the hairs in place; tinted gel adds a little color. Level 1.',
+  },
+  color: [
+    'Pick one shade lighter than your hair (dark hair) or up to two shades darker (very fair hair), never black on fair skin.',
+    'Grey or white brows: soft grey-taupe, not dark brown.',
+    'Keep the front lightest; put most color from the arch to the tail.',
+  ],
+};
+
 // Profile traits as fit keys. hooded comes from the YouCam eyelid result.
 export function traitsOf(p) {
   const t = [];

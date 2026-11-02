@@ -85,9 +85,10 @@ export default function SkinScan({ session, update, next, config }) {
     if (f) analyze(await fileToDataUrl(f));
   }
 
-  // The sample photo replays a real saved YouCam scan of public/samples/face-1.jpg (no units).
-  function useDemo() {
-    update({ mode: 'demo', selfie: demo.selfie, scanMeta: null, profile: buildProfile(demo.scan) });
+  // A sample photo replays a real saved YouCam scan of that face (no units).
+  function useDemo(faceId) {
+    demo.use(faceId);
+    update({ mode: 'demo', demoFace: demo.id, selfie: demo.selfie, scanMeta: null, profile: buildProfile(demo.scan) });
     setPhase('results');
   }
 
@@ -144,12 +145,19 @@ export default function SkinScan({ session, update, next, config }) {
               </label>
             </div>
             {demo.available && (
-              <button className="btn big ghost" onClick={useDemo}>
-                <img src={demo.selfie} alt="" width="36" height="36" style={{ borderRadius: '50%', objectFit: 'cover' }} />
-                Use a sample photo (no camera needed)
-              </button>
+              <div className="stack" style={{ gap: 8 }}>
+                <p className="small muted" style={{ margin: 0 }}>Or use a sample photo (no camera needed):</p>
+                <div className="actions">
+                  {demo.faces.map((f) => (
+                    <button key={f.id} className="btn ghost" onClick={() => useDemo(f.id)} aria-label={`Use sample photo: ${f.label}`}>
+                      <img src={f.selfie} alt="" width="36" height="36" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
-            {!canGoLive && <p className="small muted" style={{ margin: 0 }}>Live scan is off on this site. Use the sample photo to try every step.</p>}
+            {!canGoLive && <p className="small muted" style={{ margin: 0 }}>Live scan is off on this site. Use a sample photo to try every step.</p>}
             {canGoLive && locked && <p className="small muted" style={{ margin: 0 }}>Enter the passcode to scan your own photo.</p>}
             {!canGoLive && !demo.available && <p className="error">No API key and no demo data yet. See the README.</p>}
             <p className="small muted" style={{ margin: 0 }}>Tip: face the camera, light in front of you, no eye makeup yet.</p>

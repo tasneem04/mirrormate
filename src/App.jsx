@@ -1,11 +1,12 @@
-// MirrorMate app shell: holds the shared state and moves between the 5 steps.
-//   scan -> look -> makeup -> coach -> finish
+// MirrorMate app shell: holds the shared state and moves between the 6 steps.
+//   scan -> look -> makeup -> coach -> brows -> finish
 // "Pick a look" comes before "My makeup" so the tools check knows which look you chose.
 import React, { useEffect, useState } from 'react';
 import SkinScan from './steps/SkinScan.jsx';
 import PickLook from './steps/PickLook.jsx';
 import MyMakeup from './steps/MyMakeup.jsx';
 import LiveCoach from './steps/LiveCoach.jsx';
+import Brows from './steps/Brows.jsx';
 import Finish from './steps/Finish.jsx';
 import { getConfig } from './lib/api.js';
 import { NAME, PARTNER, TAGLINE } from './brand.js';
@@ -18,6 +19,7 @@ const STEPS = [
   { id: 'look', label: 'Pick a look', hint: 'Tap the look you want to learn.' },
   { id: 'makeup', label: 'Your makeup', hint: 'Show each eye product: camera, photo upload, or the list.' },
   { id: 'coach', label: 'Live coach', hint: 'Follow each step in the mirror. Tips pop up as you go.' },
+  { id: 'brows', label: 'Brows', hint: 'Shape your brows step by step: map, fill, blend, set. Or skip.' },
   { id: 'finish', label: 'Done', hint: 'See your before, goal and after side by side.' },
 ];
 
@@ -79,6 +81,7 @@ export default function App() {
         {current === 'look' && <PickLook {...props} />}
         {current === 'makeup' && <MyMakeup {...props} />}
         {current === 'coach' && <LiveCoach {...props} />}
+        {current === 'brows' && <Brows {...props} />}
         {current === 'finish' && <Finish {...props} restart={restart} />}
       </main>
 
