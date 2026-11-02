@@ -186,27 +186,91 @@ export function wingReach(frame, points) {
 //   fix  = something to change (orange), good = keep going (green), info = neutral.
 const T = (id, text, level = 'fix') => ({ id, text, level });
 
-// Step order follows common beginner guides: prep (primer) -> transition shade in the crease ->
-// lid color -> darker outer corner -> liner -> wing. See docs/research.md for sources.
+// Step titles (short, for the step list).
 export const STEP_INFO = {
-  prep: { title: 'Get ready', how: 'Pat a little eye primer or concealer on your lids. Sit facing the camera in good light.' },
-  crease: { title: 'Crease', how: 'Fluffy brush, a matte shade a little darker than your skin. Small side-to-side moves in the fold of your lid.' },
-  base: { title: 'Lid color', how: 'Flat brush, your lid shade. Pat it on the lid, from the lashes up to the fold.' },
-  outer: { title: 'Outer corner', how: 'Small brush, your darkest shade. Press it into the outer corner, then sweep it into the crease.' },
-  liner: { title: 'Liner', how: 'Short strokes along the upper lashes, from the inner to the outer corner.' },
-  wing: { title: 'Wing', how: 'From the outer corner, flick out toward the end of your brow. Keep it short of the brow.' },
+  prep: { title: 'Get ready' },
+  base: { title: 'Lid color' },
+  crease: { title: 'Deeper shade' },
+  outer: { title: 'Smoke it out' },
+  liner: { title: 'Liner + mascara' },
+  wing: { title: 'Wing' },
 };
 
-// Hooded lids: guides say to place crease color just above the natural fold, with eyes open.
-export function stepHow(step, profile) {
-  const how = STEP_INFO[step]?.how || '';
-  if (step === 'crease' && profile?.eyelid === 'Hooded-lid') return `${how} With hooded lids, go just above the fold and check with your eyes open.`;
-  if (step === 'crease' && profile?.eyelid === 'Single-lid') return 'Fluffy brush, a matte shade. Blend it up from the lashes in a soft gradient. No need to draw a crease.';
-  if (step === 'outer' && profile?.eyelid === 'Deep-Set') return `${how} Deep-set eyes: keep the dark shade to the outer corner and a light shade on the lid.`;
-  if (step === 'wing' && (profile?.eyeAngle === 'Downturned' || profile?.eyelid === 'Hooded-lid')) return `${how} Angle it up, not straight out, so it stays visible.`;
-  if (step === 'prep' && profile?.oily) return 'Pat a thin layer of eye primer on your lids and wait 30 seconds. Oily lids need it most. Sit facing the camera in good light.';
-  if (step === 'prep' && profile?.dry) return 'Moisturize, wait a minute, then a thin layer of primer or concealer. Sit facing the camera in good light.';
-  return how;
+// Beginner instructions: one action per line, the tool, and a "done when" line.
+// Look-specific versions override the default. Sources: docs/research.md.
+const GUIDE = {
+  prep: {
+    tool: 'Fingertip + eye primer or concealer',
+    lines: ['Pat a little primer on each eyelid.', 'Sit facing a window or a lamp.', 'Hold the phone at eye level.'],
+    done: 'Your face is in the middle of the camera, in good light.',
+  },
+  base: {
+    tool: 'Flat brush + light brown shadow',
+    lines: ['Dip the brush. Tap off the extra.', 'Pat it on your eyelid, from the lashes up to the fold.', 'Do the other eye.', 'Can\'t see it? Add one more layer.'],
+    done: 'Your whole lid is a soft, even brown.',
+  },
+  crease: {
+    tool: 'Fluffy brush + medium brown shadow',
+    lines: ['Take a little medium brown.', 'Put it on the outer half of the lid.', 'Blend up into the fold: small side-to-side moves.', 'Keep the inner corner light.'],
+    done: 'The outer half of the eye looks deeper, with no hard line.',
+  },
+  outer: {
+    tool: 'Small brush + black or charcoal shadow',
+    lines: ['Take a little black. Tap off the extra.', 'Press it into the outer corner in a sideways V.', 'Blend the edge up and out, toward the end of your brow.', 'Smudge the same color under the outer half of your lower lashes.', 'Blend again with a clean brush.'],
+    done: 'The outer corner is dark and fades softly, like smoke.',
+  },
+  liner: {
+    tool: 'Black pencil + mascara',
+    lines: ['Rest your elbow on the table.', 'Draw small dashes along the top lashes, inner to outer corner.', 'Join the dashes into one thin line.', 'Wiggle mascara from the roots to the tips.'],
+    done: 'A thin dark line hugs your lashes. Lashes look darker.',
+  },
+  wing: {
+    tool: 'Black liquid liner + mascara',
+    lines: ['Look straight ahead.', 'From the outer corner, draw a short line toward the end of your brow.', 'Draw from the wing tip back to the middle of the top lash line.', 'Fill the small triangle in black.', 'Do the other eye. Match the angle.', 'Add mascara.'],
+    done: 'Both wings are sharp, the same size, and point to the end of your brow.',
+  },
+};
+const LOOK_GUIDE = {
+  smoky: {
+    base: { tool: 'Flat brush + medium brown shadow (shimmer is fine)', done: 'Your whole lid is brown, from the lashes to the fold.' },
+    crease: {
+      tool: 'Fluffy brush + dark brown shadow',
+      lines: ['Take dark brown.', 'Press it on the outer third of the lid.', 'Blend it up into the fold: small side-to-side moves.', 'Keep the inner half lighter.'],
+      done: 'The outer corner is clearly darker, and the edge is soft.',
+    },
+    liner: {
+      tool: 'Black kohl pencil + cotton swab + mascara',
+      lines: ['Draw a line along the top lashes.', 'Draw along the outer half of the lower lashes.', 'Smudge both lines with the swab.', 'Two coats of mascara on the top lashes.'],
+      done: 'The eye is framed in a smudged dark line. Lashes look thick.',
+    },
+  },
+  winged: {
+    base: { tool: 'Flat brush + soft brown shadow', done: 'Your lid is an even soft brown.' },
+    liner: {
+      tool: 'Black liquid liner (or a liner pen)',
+      lines: ['Rest your elbow on the table.', 'Look down into the screen.', 'Draw a thin line along the top lashes, inner to outer corner.', 'Stay close: no skin between the line and the lashes.'],
+      done: 'One thin black line, no gaps.',
+    },
+  },
+};
+
+// { title, tool, lines[], done } for a step of a look, adapted to the eye shape.
+export function stepGuide(lookId, step, profile) {
+  const g = { title: STEP_INFO[step]?.title || step, ...GUIDE[step], ...(LOOK_GUIDE[lookId]?.[step] || {}) };
+  const lines = [...(g.lines || [])];
+  if (step === 'crease' && profile?.eyelid === 'Hooded-lid') lines.push('Hooded lids: go a little above the fold. Check with eyes open.');
+  if (step === 'crease' && profile?.eyelid === 'Single-lid') lines.push('No fold? Blend it up from the lashes in a soft gradient.');
+  if (step === 'outer' && profile?.eyelid === 'Deep-Set') lines.push('Deep-set eyes: keep the black in the outer corner only.');
+  if (step === 'wing' && (profile?.eyeAngle === 'Downturned' || profile?.eyelid === 'Hooded-lid')) lines.push('Angle the wing up, not straight out, so it shows.');
+  if (step === 'prep' && profile?.oily) lines.splice(1, 0, 'Oily lids: wait 30 seconds for the primer to set.');
+  if (step === 'prep' && profile?.dry) lines.unshift('Dry skin: moisturize first and wait a minute.');
+  return { ...g, lines };
+}
+
+// One short sentence per step (voice and small screens).
+export function stepHow(step, profile, lookId) {
+  const g = stepGuide(lookId, step, profile);
+  return [g.tool + '.', ...g.lines].join(' ');
 }
 
 // Face checks shared by all steps. Returns a tip or null when the face is fine.

@@ -5,8 +5,10 @@ import React, { useEffect, useState } from 'react';
 import { LOOKS, stageIds } from '../../shared/looks.js';
 import { tryOnLook, demo } from '../lib/api.js';
 import { recommendedLook } from '../lib/skinSummary.js';
-import { demoStageImages, liveStageImages, liveStageCost, eyeFocusOf, STAGE_LABEL } from '../lib/stageImages.js';
+import { demoStageImages, liveStageImages, liveStageCost, eyeFocusOf, stepImages, STAGE_LABEL } from '../lib/stageImages.js';
+import { stepGuide } from '../lib/coachRules.js';
 import EyeCrop from './EyeCrop.jsx';
+import BeforeAfter from './BeforeAfter.jsx';
 
 function StepStrip({ lookId, images, focus }) {
   const ids = stageIds(lookId).filter((id) => images?.[id]);
@@ -19,6 +21,33 @@ function StepStrip({ lookId, images, focus }) {
           <figcaption>{i + 1}. {STAGE_LABEL[id]}</figcaption>
         </figure>
       ))}
+    </div>
+  );
+}
+
+// Each step of the picked look: before/after zoomed on one eye + plain instructions.
+function StepGuide({ look, images, focus, profile, full, selfie }) {
+  const steps = look.steps.filter((st) => st !== 'prep');
+  return (
+    <div className="card stack">
+      <h3 style={{ margin: 0 }}>{look.name}: before and after</h3>
+      <BeforeAfter before={images?.bare || selfie} after={full} focus={focus} beforeLabel="No makeup" afterLabel="Full look" />
+      <p className="small muted" style={{ margin: 0 }}>Drag the line to compare. Below: each step, zoomed on one eye.</p>
+      <div className="stepcards">
+        {steps.map((st, i) => {
+          const g = stepGuide(look.id, st, profile);
+          const v = stepImages(look.id, st, images || {});
+          return (
+            <div key={st} className="card stepcard">
+              <h4>Step {i + 1}. {g.title}</h4>
+              {v.show && <BeforeAfter before={v.from ? images[v.from] : null} after={v.show} focus={focus} oneEye />}
+              <p className="tool-line"><strong>Use:</strong> {g.tool}</p>
+              <ol className="howto">{g.lines.map((l) => <li key={l}>{l}</li>)}</ol>
+              <p className="done-line">✓ Done when: {g.done}</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -113,6 +142,9 @@ export default function PickLook({ session, update, next, back }) {
           </button>
         ))}
       </div>
+      {pickedLook && images[picked] && (
+        <StepGuide look={pickedLook} images={steps[picked]} focus={focus} profile={profile} full={images[picked]} selfie={selfie} />
+      )}
       {mode !== 'demo' && images[picked] && !pickedHasSteps && (
         <div className="card row small">
           <span>See {pickedLook?.name.toLowerCase()} step by step on your face. The coach uses these as the goal for each step.</span>

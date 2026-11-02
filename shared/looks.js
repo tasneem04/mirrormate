@@ -9,22 +9,22 @@
 
 // Shades per undertone. Warm skin -> golden/bronze, cool -> taupe/plum, neutral -> soft brown.
 const SHADES = {
-  warm:    { light: '#E8C39E', mid: '#B07A4F', deep: '#6B3E26', liner: '#2B1B12' },
-  cool:    { light: '#E6CFCF', mid: '#9C7A82', deep: '#4E3A4A', liner: '#1A1A1F' },
-  neutral: { light: '#E9CBB2', mid: '#A27C64', deep: '#5A4034', liner: '#1E1A18' },
+  warm:    { light: '#D9A77A', mid: '#9A5E3A', deep: '#5A3020', smoke: '#2A1A14', liner: '#120B08' },
+  cool:    { light: '#D2B0B0', mid: '#866470', deep: '#43303E', smoke: '#221A20', liner: '#0C0B0E' },
+  neutral: { light: '#D8B094', mid: '#8E6650', deep: '#4E362C', smoke: '#241A17', liner: '#0E0B0A' },
 };
 
 // Deep skin: pale shades vanish or look ashy, so use richer colors (bronze, deep brown, plum)
 // and a shimmer lid that catches light. Depth comes from blended shadow, not heavy liner.
 // Sources in docs/knowledge.md section 10.
 const DEEP_SHADES = {
-  warm:    { light: '#B9763A', mid: '#6E3418', deep: '#3A1A10', liner: '#1A0E09', shimmer: '#E7B260' },
-  cool:    { light: '#8C5A7A', mid: '#5A2D4E', deep: '#341C30', liner: '#150E14', shimmer: '#D9A6C8' },
-  neutral: { light: '#A8703F', mid: '#5A2E36', deep: '#3A1F22', liner: '#170E0E', shimmer: '#E2B06A' },
+  warm:    { light: '#B9763A', mid: '#6E3418', deep: '#3A1A10', smoke: '#1E120E', liner: '#0A0605', shimmer: '#E7B260' },
+  cool:    { light: '#8C5A7A', mid: '#5A2D4E', deep: '#341C30', smoke: '#1C1220', liner: '#0A080A', shimmer: '#D9A6C8' },
+  neutral: { light: '#A8703F', mid: '#6E3A28', deep: '#3A2420', smoke: '#2A1A16', liner: '#0A0808', shimmer: '#E2B06A' },
 };
-// Shadow intensity boost by skin depth (YouCam colorIntensity is 0..100). Kept small so it
-// looks like real makeup; the richer deep shades do most of the work.
-const BOOST = { light: 0, medium: 5, deep: 10 };
+// Shadow intensity boost by skin depth (YouCam colorIntensity is 0..100). Deep skin needs a
+// little more so the shadow reads on camera.
+const BOOST = { light: 0, medium: 3, deep: 6 };
 
 // Lip colors (satin, natural intensity) per look, undertone and depth.
 // natural = nude rose, smoky = berry / deep mauve, winged = red / brick.
@@ -43,74 +43,78 @@ const matte = (color, colorIntensity) => ({ color, texture: 'matte', colorIntens
 const lid = (s, colorIntensity) => s.shimmer
   ? { color: s.light, texture: 'shimmer', shimmerColor: s.shimmer, shimmerIntensity: 45, colorIntensity: clamp(colorIntensity + boost) }
   : matte(s.light, colorIntensity);
-// Liner is never boosted: a soft, low-intensity line that hugs the lashes looks real.
+// Liner and lashes are never boosted: they are near-black already.
 const line = (color, colorIntensity) => ({ color, texture: 'matte', colorIntensity });
 const shadow = (name, palettes) => ({ category: 'eye_shadow', pattern: { name }, palettes });
 const liner = (name, color, ci) => ({ category: 'eye_liner', pattern: { name }, palettes: [line(color, ci)] });
+const lashes = (name, ci) => ({ category: 'eyelashes', pattern: { name }, palettes: [{ color: '#000000', colorIntensity: ci }] });
 const lips = (color, ci) => ({ category: 'lip_color', shape: { name: 'original' }, palettes: [{ color, texture: 'satin', colorIntensity: ci }], style: { type: 'full' } });
 
-// Liner patterns (eyeliner.json): Smoke28 = soft thin line on the upper lashes,
-// Smoke17 = smudged outer corner, OpenWings5 = small thin wing. No thickness field exists
-// in makeup-vto, so thickness comes from the pattern.
+// Patterns (catalogs above). Tested on the sample faces so each step is clearly visible at
+// phone size but still blends like real makeup:
+//   eye_shadow 1color1 = lid wash, 2colors6 = light inner lid + deeper outer lid/corner,
+//   4colors1 = smoky outer V wrapped under the outer lower lashes.
+//   eye_liner Smoke28 = thin line on the upper lashes, Smoke17 = smudged outer corner,
+//   OpenWings17 = sharp, lifted wing.  eyelashes UpperDense1 / Natural3 = mascara.
 //
 // stages(s, lip): cumulative layers, one try-on image each. The last stage is the full look.
 export const LOOKS = [
   {
     id: 'natural',
     name: 'Soft natural',
-    blurb: 'Light lid wash, a deeper crease and a soft thin line. Great first look.',
+    blurb: 'Warm lid color, a soft deeper corner, a thin line and mascara. Great first look.',
     tools: ['flat_brush', 'blend_brush', 'liner_pencil'],
-    steps: ['prep', 'crease', 'base', 'liner'],
+    steps: ['prep', 'base', 'crease', 'liner'],
     stages: (s, lip) => {
-      const base = shadow('1color1', [lid(s, 45)]);
-      const crease = shadow('2colors1', [lid(s, 45), matte(s.mid, 50)]);
-      const ln = liner('Smoke28', s.liner, 35);
+      const base = shadow('1color1', [lid(s, 60)]);
+      const crease = shadow('2colors1', [lid(s, 60), matte(s.mid, 70)]);
+      const ln = liner('Smoke28', s.liner, 65);
+      const lash = lashes('Natural3', 70);
       return [
         { id: 'base', effects: [base] },
         { id: 'crease', effects: [crease] },
-        { id: 'liner', effects: [crease, ln] },
-        { id: 'lips', effects: [crease, ln, lip] },
+        { id: 'liner', effects: [crease, ln, lash] },
+        { id: 'lips', effects: [crease, ln, lash, lip] },
       ];
     },
   },
   {
     id: 'smoky',
-    name: 'Soft smoky',
-    blurb: 'Three shades blended from light to deep, softly smudged liner. Practice blending.',
+    name: 'Smoky eye',
+    blurb: 'Brown lid, a dark smoky outer corner, smudged liner under the eye and mascara.',
     tools: ['flat_brush', 'blend_brush', 'liner_pencil', 'swab'],
-    steps: ['prep', 'crease', 'base', 'outer', 'liner'],
+    steps: ['prep', 'base', 'crease', 'outer', 'liner'],
     stages: (s, lip) => {
-      const base = shadow('1color1', [lid(s, 55)]);
-      const crease = shadow('2colors1', [lid(s, 55), matte(s.mid, 60)]);
-      const smoke = shadow('3colors1', [lid(s, 55), matte(s.mid, 65), matte(s.deep, 65)]);
-      const thin = liner('Smoke28', s.liner, 35);
-      const smudge = liner('Smoke17', s.deep, 30);
+      const base = shadow('1color1', [lid(s, 75)]);
+      const crease = shadow('2colors6', [lid(s, 75), matte(s.deep, 90)]);
+      const smoke = shadow('4colors1', [lid(s, 75), matte(s.mid, 85), matte(s.smoke, 92), matte(s.deep, 85)]);
+      const smudge = liner('Smoke17', s.liner, 80);
+      const lash = lashes('UpperDense1', 85);
       return [
         { id: 'base', effects: [base] },
         { id: 'crease', effects: [crease] },
-        { id: 'liner', effects: [crease, thin] },
-        { id: 'smoke', effects: [smoke, smudge] },
-        { id: 'lips', effects: [smoke, smudge, lip] },
+        { id: 'smoke', effects: [smoke] },
+        { id: 'liner', effects: [smoke, smudge, lash] },
+        { id: 'lips', effects: [smoke, smudge, lash, lip] },
       ];
     },
   },
   {
     id: 'winged',
     name: 'Winged liner',
-    blurb: 'Neutral lid and a thin wing that points to the end of your brow.',
+    blurb: 'Soft brown lid and a sharp black wing that points to the end of your brow.',
     tools: ['flat_brush', 'liner_liquid'],
     steps: ['prep', 'base', 'liner', 'wing'],
     stages: (s, lip) => {
-      const base = shadow('1color1', [lid(s, 35)]);
-      const crease = shadow('2colors1', [lid(s, 35), matte(s.mid, 30)]);
-      const thin = liner('Smoke28', s.liner, 40);
-      const wing = liner('OpenWings5', s.liner, 50);
+      const base = shadow('2colors1', [lid(s, 50), matte(s.mid, 55)]);
+      const thin = liner('Smoke28', s.liner, 90);
+      const wing = liner('OpenWings17', s.liner, 95);
+      const lash = lashes('UpperDense1', 80);
       return [
         { id: 'base', effects: [base] },
-        { id: 'crease', effects: [crease] },
-        { id: 'liner', effects: [crease, thin] },
-        { id: 'wing', effects: [crease, wing] },
-        { id: 'lips', effects: [crease, wing, lip] },
+        { id: 'liner', effects: [base, thin] },
+        { id: 'wing', effects: [base, wing, lash] },
+        { id: 'lips', effects: [base, wing, lash, lip] },
       ];
     },
   },
@@ -126,10 +130,9 @@ export function stageIds(lookId) {
 }
 
 // Which step image to show as the goal for a coach step.
-const STEP_STAGE = { base: 'base', crease: 'crease', outer: 'smoke', wing: 'wing' };
+const STEP_STAGE = { base: 'base', crease: 'crease', outer: 'smoke', liner: 'liner', wing: 'wing' };
 export function stageForStep(lookId, step) {
   const ids = stageIds(lookId);
-  if (step === 'liner') return ids.includes('smoke') ? 'smoke' : 'liner';
   return ids.includes(STEP_STAGE[step]) ? STEP_STAGE[step] : null;
 }
 

@@ -3,10 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildEffects, stageIds, stageForStep, lipColor, LOOK_IDS } from '../shared/looks.js';
 
-test('each look builds up base -> crease -> liner -> (smoke|wing) -> lips', () => {
+test('each look builds up step by step, ending with lips', () => {
   assert.deepEqual(stageIds('natural'), ['base', 'crease', 'liner', 'lips']);
-  assert.deepEqual(stageIds('smoky'), ['base', 'crease', 'liner', 'smoke', 'lips']);
-  assert.deepEqual(stageIds('winged'), ['base', 'crease', 'liner', 'wing', 'lips']);
+  assert.deepEqual(stageIds('smoky'), ['base', 'crease', 'smoke', 'liner', 'lips']);
+  assert.deepEqual(stageIds('winged'), ['base', 'liner', 'wing', 'lips']);
 });
 
 test('base stage is lid shadow only; full look has lips with a satin finish', () => {
@@ -22,24 +22,39 @@ test('base stage is lid shadow only; full look has lips with a satin finish', ()
   }
 });
 
-test('liner stays soft: low intensity, thin patterns, no deep-skin boost', () => {
+test('looks are clearly visible: smoky is dark and strong, winged has a sharp black wing, all have mascara', () => {
+  const smoky = buildEffects('smoky', 'neutral', 'light');
+  const shadow = smoky.find((e) => e.category === 'eye_shadow');
+  assert.equal(shadow.pattern.name, '4colors1');
+  assert.ok(Math.max(...shadow.palettes.map((p) => p.colorIntensity)) >= 90);
+  const wing = buildEffects('winged', 'cool', 'medium').find((e) => e.category === 'eye_liner');
+  assert.equal(wing.pattern.name, 'OpenWings17');
+  assert.ok(wing.palettes[0].colorIntensity >= 90);
+  for (const id of LOOK_IDS) assert.ok(buildEffects(id, 'warm', 'deep').some((e) => e.category === 'eyelashes'), `${id} has mascara`);
+});
+
+test('liner is not boosted on deep skin', () => {
   for (const id of LOOK_IDS) {
     const deep = buildEffects(id, 'neutral', 'deep').filter((e) => e.category === 'eye_liner');
     const light = buildEffects(id, 'neutral', 'light').filter((e) => e.category === 'eye_liner');
-    assert.equal(deep.length, 1);
-    assert.ok(deep[0].palettes[0].colorIntensity <= 50);
     assert.equal(deep[0].palettes[0].colorIntensity, light[0].palettes[0].colorIntensity);
-    assert.ok(['Smoke28', 'Smoke17', 'OpenWings5'].includes(deep[0].pattern.name));
   }
 });
 
-test('deep skin gets only a small shadow boost (+10)', () => {
+test('deep skin gets a small shadow boost', () => {
   const ci = (d) => buildEffects('smoky', 'neutral', d, 'smoke')[0].palettes[1].colorIntensity;
-  assert.equal(ci('deep') - ci('light'), 10);
+  assert.equal(ci('deep') - ci('light'), 6);
+});
+
+test('each stage adds something (no two stages render the same)', () => {
+  for (const id of LOOK_IDS) {
+    const all = stageIds(id).map((st) => JSON.stringify(buildEffects(id, 'warm', 'medium', st)));
+    assert.equal(new Set(all).size, all.length, id);
+  }
 });
 
 test('palette count matches the pattern color count', () => {
-  const n = { '1color1': 1, '2colors1': 2, '3colors1': 3 };
+  const n = { '1color1': 1, '2colors1': 2, '2colors6': 2, '3colors1': 3, '4colors1': 4 };
   for (const id of LOOK_IDS) for (const st of stageIds(id)) {
     for (const e of buildEffects(id, 'warm', 'medium', st)) {
       if (e.category === 'eye_shadow') assert.equal(e.palettes.length, n[e.pattern.name]);
@@ -54,7 +69,7 @@ test('lip colors follow the look and depth', () => {
 
 test('coach steps map to step images', () => {
   assert.equal(stageForStep('smoky', 'outer'), 'smoke');
-  assert.equal(stageForStep('smoky', 'liner'), 'smoke');
+  assert.equal(stageForStep('smoky', 'liner'), 'liner');
   assert.equal(stageForStep('natural', 'liner'), 'liner');
   assert.equal(stageForStep('winged', 'wing'), 'wing');
   assert.equal(stageForStep('natural', 'prep'), null);

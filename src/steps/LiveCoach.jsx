@@ -11,14 +11,14 @@ import { startCamera, stopCamera, snapshot, brightness } from '../lib/camera.js'
 import { loadTrackers, pickBrushHand, nextTs } from '../lib/tracking.js';
 import { sampleFace, blendSamples, compareStep, judge, expectedFor, doneTracker, eyeOpen } from '../lib/zoneCompare.js';
 import { loadGoalSamples, stepImages } from '../lib/stageImages.js';
-import EyeCrop from './EyeCrop.jsx';
+import BeforeAfter from './BeforeAfter.jsx';
 import {
-  coachTip, newHistory, eyeFrame, creaseLine, creaseHeight, toolPoint, STEP_INFO, stepHow,
+  coachTip, newHistory, eyeFrame, creaseLine, creaseHeight, toolPoint, STEP_INFO, stepHow, stepGuide,
 } from '../lib/coachRules.js';
 import { speak, stopSpeaking } from '../lib/speech.js';
 
 const LEVEL_COLOR = { good: '#23885d', fix: '#e08a2b', info: '#9aa3b2' };
-const HOLD_MS = 1500; // keep each tip on screen at least this long
+const HOLD_MS = 2500; // keep each tip on screen at least this long (no flicker)
 const CHECK_EVERY_MS = 200; // color check rate
 const HAND_AWAY_MS = 800;   // the hand must be away this long before the color check talks
 const PRACTICE_MS = 7000;   // practice: time to build up one step
@@ -33,42 +33,20 @@ function handNearEyes(hand, face, w, h) {
   });
 }
 
-const pctTxt = (v) => `${Math.round((v || 0) * 100)}%`;
-function heightTxt(e) {
-  if (e.height == null) return '—';
-  const d = e.height - e.top;
-  return d > 0.12 ? 'too high' : d < -0.15 ? 'low' : 'right';
-}
-
-function CheckPanel({ check, beforeSet, onRetake, practice }) {
+// Big progress bar: how much of this step's color change the camera sees so far.
+const NEED = { base: 0.55, crease: 0.5, outer: 0.5, liner: 0.5, wing: 0.4 };
+function Meter({ step, check, beforeSet, practice, onRetake }) {
   const c = check?.c;
+  const cov = c ? ((c.right?.coverage || 0) + (c.left?.coverage || 0)) / 2 : 0;
+  const pct = check?.done ? 100 : Math.min(99, Math.round((cov / (NEED[step] || 0.5)) * 100));
   return (
-    <div className="card check" aria-live="polite">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h3 style={{ margin: 0 }}>Live check</h3>
-        {!practice && <button className="btn ghost small" onClick={onRetake}>Retake before</button>}
+    <div className="meter" aria-live="polite">
+      <div className="txt">
+        <span>{check?.done ? '✓ Step done!' : !beforeSet ? 'Look at the camera, eyes open, hands down…' : 'Your progress on this step'}</span>
+        <span>{beforeSet ? `${pct}%` : ''}</span>
       </div>
-      {!beforeSet && <p className="small muted" style={{ margin: 0 }}>Look at the camera with your eyes open and hands down: I'll save a "before" picture of your eyes.</p>}
-      {beforeSet && !c && <p className="small muted" style={{ margin: 0 }}>Before saved. Apply, then lower the brush and look at the camera to check.</p>}
-      {c && (
-        <>
-          <div className="bars">
-            {[['Right eye', c.right], ['Left eye', c.left]].map(([name, e]) => (
-              <React.Fragment key={name}>
-                <span>{name}</span>
-                <span className="bar"><i className={check.j.ok ? 'ok' : ''} style={{ width: pctTxt(Math.min(1, e.coverage)) }} /></span>
-                <span>{pctTxt(e.coverage)}</span>
-              </React.Fragment>
-            ))}
-          </div>
-          <p className="small" style={{ margin: 0 }}>
-            Height: {heightTxt(c.right)} / {heightTxt(c.left)} · Symmetry: {pctTxt(1 - c.symmetry.coverage)}
-            {c.zone.blend && ` · Blend: ${[c.right.blend, c.left.blend].map((b) => (b == null ? '—' : b >= 0.5 ? 'soft' : 'harsh')).join(' / ')}`}
-          </p>
-          <p className="small muted" style={{ margin: 0 }}>{c.fromGoal ? 'Compared with the color change in your step image.' : 'Compared with the guide zone (no step image).'}</p>
-          {check.done && <p style={{ margin: 0, color: '#23885d', fontWeight: 700 }}>✓ Step done</p>}
-        </>
-      )}
+      <div className="track"><div className={`fill ${check?.done ? 'ok' : ''}`} style={{ width: `${beforeSet ? pct : 0}%` }} /></div>
+      {!practice && beforeSet && <button className="btn ghost small" style={{ justifySelf: 'start' }} onClick={onRetake}>Start this step again</button>}
     </div>
   );
 }
@@ -175,7 +153,7 @@ export default function LiveCoach({ session, update, next, back }) {
   const passedRef = useRef({});
 
   const images = goalSteps || {};
-  const stepView = stepImages(look.id, steps[stepIdx], images, steps);
+  const stepView = stepImages(look.id, steps[stepIdx], images);
 
   useEffect(() => { voiceRef.current = voice; if (!voice) stopSpeaking(); }, [voice]);
   useEffect(() => { reachRef.current = useBrush ? 0.6 : 0; }, [useBrush]);
@@ -191,7 +169,7 @@ export default function LiveCoach({ session, update, next, back }) {
   function resetCheck() {
     const step = steps[stepIdx];
     const g = goalRef.current;
-    const { from, to, also } = stepImages(look.id, step, images, steps);
+    const { from, to, also } = stepImages(look.id, step, images);
     const expected = g && from && to && g.samples[from] && g.samples[to]
       ? expectedFor(step, g.samples[from], g.samples[to], profile, also ? g.samples[also] : null) : null;
     cmpRef.current = {
@@ -210,7 +188,7 @@ export default function LiveCoach({ session, update, next, back }) {
     shownRef.current = { tip: null, at: 0 };
     setTip(null);
     const info = STEP_INFO[steps[stepIdx]];
-    if (voiceRef.current && info) speak(`${info.title}. ${stepHow(steps[stepIdx], profile)}`, { minGapMs: 0 });
+    if (voiceRef.current && info) speak(`${info.title}. ${stepHow(steps[stepIdx], profile, look.id)}`, { minGapMs: 0 });
   }, [stepIdx]);
 
   // Show a new tip, but hold each one for a moment so the text doesn't flicker.
@@ -360,81 +338,79 @@ export default function LiveCoach({ session, update, next, back }) {
 
   const step = steps[stepIdx];
   const info = STEP_INFO[step];
+  const guide = stepGuide(look.id, step, profile);
   const last = stepIdx === steps.length - 1;
   const stepGoal = stepView.show || goal;
+  const stepBefore = stepView.show && stepView.from ? images[stepView.from] : null;
   const canPractice = Boolean(goalData);
+  const go = (d) => setStepIdx((i) => Math.max(0, Math.min(steps.length - 1, i + d)));
 
   return (
-    <section className="coach">
-      <div className="stack">
-        <div className="cam" style={{ aspectRatio: '4 / 3' }}>
-          <video ref={videoRef} className="mirror" style={{ visibility: practice ? 'hidden' : 'visible' }} />
-          {practice && <canvas ref={practiceRef} className="practice" />}
-          <canvas ref={canvasRef} className={`overlay ${practice ? '' : 'mirror'}`} />
-          {stepGoal && step !== 'prep' && (
-            <div className="goal-pip step">
-              <EyeCrop src={stepGoal} focus={eyeFocus} aspect={2} alt={`Goal for ${info.title}`} />
-              <span>Goal: {info.title}</span>
-            </div>
-          )}
-          {check?.done && <div className="done-badge">✓ Step done</div>}
-          {practice && <div className="hint" style={{ top: 'auto', bottom: 10 }}>Practice: sample face, applying this step</div>}
-          {status && !practice && <div className="hint" role="status">{status}</div>}
+    <section className="coach2">
+      <div className="topbar">
+        <div className="stepbar" aria-hidden="true">
+          {steps.map((s2, i) => <i key={s2} className={i < stepIdx || passed[s2] ? 'done' : i === stepIdx ? 'on' : ''} />)}
         </div>
-        <div className={`tip ${tip?.level || 'info'}`} role="status" aria-live="polite">
-          {tip ? tip.text : status && !practice ? 'Getting ready...' : stepHow(step, profile)}
+        <div className="steptitle">
+          <h2>{info.title}</h2>
+          <span className="step-count">Step {stepIdx + 1} of {steps.length}</span>
         </div>
-        {error && <p className="error" role="alert">{error} {canPractice ? 'Showing practice on the sample face instead.' : 'Allow camera access and reload.'}</p>}
-        {error && !canPractice && <button className="btn big ghost" onClick={finish}>No camera? Skip to the end (upload an after photo there)</button>}
-        <p className="small muted" style={{ margin: 0 }}>
-          {practice ? 'The pink guide shows where to work. The check compares the eye colors with the step image.'
-            : `The dot shows where the coach thinks your ${useBrush ? 'brush tip' : 'fingertip'} is. The pink guide shows where to work. Lower the brush and look at the camera to check a step.`}
-        </p>
       </div>
 
-      <aside className="stack">
-        <div className="card goal stack">
-          <h3>Goal for this step: {info.title}</h3>
-          {stepGoal && <EyeCrop src={stepGoal} focus={eyeFocus} aspect={2.2} alt={`${info.title} on your face`} />}
-          {stepGoal !== goal && goal && <p className="small muted" style={{ margin: 0 }}>Full look: {look.name}</p>}
-          {stepGoal !== goal && goal && <EyeCrop src={goal} focus={eyeFocus} aspect={3} alt={`${look.name} on your face`} />}
-        </div>
-
-        {step !== 'prep' && <CheckPanel check={check} beforeSet={beforeSet} practice={practice} onRetake={resetCheck} />}
-
-        <div className="card stack">
-          <ol className="steps">
-            {steps.map((s, i) => (
-              <li key={s} className={`${i === stepIdx ? 'on' : i < stepIdx ? 'done' : ''} ${passed[s] ? 'passed' : ''}`}>
-                {i < stepIdx ? '✓ ' : `${i + 1}. `}{STEP_INFO[s].title}
-              </li>
-            ))}
-          </ol>
-          <p className="small" style={{ margin: 0 }}><strong>{stepIdx + 1} of {steps.length} · {info.title}:</strong> {stepHow(step, profile)}</p>
-          <div className="actions">
-            {!last && <button className={`btn big ${check?.done ? 'good' : ''}`} onClick={() => setStepIdx((i) => i + 1)}>Next step</button>}
-            {last && <button className="btn big" onClick={finish}>Finish and take photo</button>}
-            {stepIdx > 0 && <button className="btn ghost small" onClick={() => setStepIdx((i) => i - 1)}>Previous</button>}
+      <div className="views">
+        <div className="cam" style={{ aspectRatio: '4 / 3' }}>
+          <video ref={videoRef} className="mirror" playsInline muted style={{ visibility: practice ? 'hidden' : 'visible' }} />
+          {practice && <canvas ref={practiceRef} className="practice" />}
+          <canvas ref={canvasRef} className={`overlay ${practice ? '' : 'mirror'}`} />
+          {check?.done && <div className="done-badge">✓ Step done</div>}
+          {practice && <div className="hint" style={{ left: "auto", right: 10, transform: "none" }}>Practice</div>}
+          {status && !practice && <div className="hint" role="status">{status}</div>}
+          <div className={`tip cam-tip ${tip?.level || 'info'}`} role="status" aria-live="polite">
+            {tip ? tip.text : guide.lines[0]}
           </div>
         </div>
+        {step !== 'prep' && stepGoal && (
+          <div className="goalbox">
+            <p className="label">Goal for this step (drag to compare)</p>
+            <BeforeAfter before={stepBefore} after={stepGoal} focus={eyeFocus} oneEye beforeLabel="Before" afterLabel="Goal" />
+          </div>
+        )}
+      </div>
 
-        <div className="card row small">
+
+      {step !== 'prep' && <Meter step={step} check={check} beforeSet={beforeSet} practice={practice} onRetake={resetCheck} />}
+
+      {error && <p className="error" role="alert">{error} {canPractice ? 'Showing practice on the sample face instead.' : 'Allow camera access and reload.'}</p>}
+
+      <div className="card stack">
+        <p className="tool-line"><strong>Use:</strong> {guide.tool}</p>
+        <ol className="howto">{guide.lines.map((l) => <li key={l}>{l}</li>)}</ol>
+        <p className="done-line">✓ Done when: {guide.done}</p>
+        {step !== 'prep' && <p className="small muted" style={{ margin: 0 }}>Pink on the camera = where to put it. When you finish, lower the brush and look at the camera. Not sure? Just tap Next step.</p>}
+      </div>
+
+      <div className="card row small">
+        <label className="row" style={{ gap: 6 }}>
+          <input type="checkbox" checked={voice} onChange={(e) => setVoice(e.target.checked)} /> Voice tips
+        </label>
+        {!practice && (
           <label className="row" style={{ gap: 6 }}>
-            <input type="checkbox" checked={voice} onChange={(e) => setVoice(e.target.checked)} /> Voice tips
+            <input type="checkbox" checked={useBrush} onChange={(e) => setUseBrush(e.target.checked)} /> I'm using a brush
           </label>
-          {!practice && (
-            <label className="row" style={{ gap: 6 }}>
-              <input type="checkbox" checked={useBrush} onChange={(e) => setUseBrush(e.target.checked)} /> I'm using a brush
-            </label>
-          )}
-          {canPractice && !error && (
-            <label className="row" style={{ gap: 6 }}>
-              <input type="checkbox" checked={practice} onChange={(e) => setPractice(e.target.checked)} /> Practice on the sample face
-            </label>
-          )}
-          <button className="btn ghost small" onClick={back}>Back</button>
-        </div>
-      </aside>
+        )}
+        {canPractice && !error && (
+          <label className="row" style={{ gap: 6 }}>
+            <input type="checkbox" checked={practice} onChange={(e) => setPractice(e.target.checked)} /> Practice on the sample face
+          </label>
+        )}
+        {error && !canPractice && <button className="btn ghost small" onClick={finish}>No camera? Skip to the end</button>}
+      </div>
+
+      <div className="coach-actions">
+        <button className="btn ghost" onClick={() => (stepIdx > 0 ? go(-1) : back())}>{stepIdx > 0 ? '← Back' : 'Back'}</button>
+        {!last && <button className={`btn big ${check?.done ? 'good' : ''}`} onClick={() => go(1)}>Next step →</button>}
+        {last && <button className={`btn big ${check?.done ? 'good' : ''}`} onClick={finish}>Finish + photo</button>}
+      </div>
     </section>
   );
 }

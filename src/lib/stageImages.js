@@ -7,7 +7,7 @@ import { sampleFace } from './zoneCompare.js';
 import { sampleBrows } from './browCoach.js';
 import { BROW_STAGE_IDS, BROWS_ID } from '../../shared/brows.js';
 
-export const STAGE_LABEL = { base: 'Lid', crease: 'Crease', liner: 'Liner', smoke: 'Smoke', wing: 'Wing', lips: 'Lips' };
+export const STAGE_LABEL = { base: 'Lid color', crease: 'Deeper shade', liner: 'Liner', smoke: 'Smoke', wing: 'Wing', lips: 'Lips' };
 
 // Demo cache: { bare, base, crease, ..., <last stage> = full look }.
 export function demoStageImages(lookId) {
@@ -40,22 +40,14 @@ export async function liveStageImages({ session, lookId, goal, onImage = () => {
 export const liveStageCost = (lookId) => stageIds(lookId).length;
 
 // For a coach step: which goal image to show, and which pair defines the expected change.
-const EXPECT = {
-  base: ['bare', 'base'], crease: ['base', 'crease'], liner: ['crease', 'liner'],
-  outer: ['liner', 'smoke'], wing: ['liner', 'wing'],
-};
-const STAGE_STEP = { base: 'base', crease: 'crease', liner: 'liner', smoke: 'outer', wing: 'wing' };
-// coachSteps: the look's coach order. 'also' = 'bare' when the layer under this one is coached
-// later (smoky/natural do the crease before the lid), so the user starts from bare skin there.
-export function stepImages(lookId, step, images = {}, coachSteps = []) {
-  const show = images[stageForStep(lookId, step)] || null;
-  let [from, to] = EXPECT[step] || [];
-  // Natural/winged have no 'smoke'; the coach order may differ from the render order.
-  if (!images[to]) to = stageForStep(lookId, step);
+// The coach order matches the render order, so 'from' is the stage just before this one.
+export function stepImages(lookId, step, images = {}) {
+  const to = stageForStep(lookId, step);
+  const ids = stageIds(lookId);
+  const i = ids.indexOf(to);
+  let from = i > 0 ? ids[i - 1] : 'bare';
   if (!images[from]) from = images.bare ? 'bare' : null;
-  const fromIdx = coachSteps.indexOf(STAGE_STEP[from]);
-  const also = from && from !== 'bare' && images.bare && (fromIdx < 0 || fromIdx > coachSteps.indexOf(step)) ? 'bare' : null;
-  return { show, from, to, also };
+  return { show: (to && images[to]) || null, from, to: to && images[to] ? to : null, also: null };
 }
 
 function loadImage(src) {
