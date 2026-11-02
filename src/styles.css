@@ -229,3 +229,10 @@ input[type='text'], input[type='password'] { font: inherit; padding: 10px 16px; 
 .coach2 .cam { position: relative; }
 .coach2 .cam-tip { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3; min-height: 0; font-size: 1.1rem; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
 .coach2 .cam-tip.info { background: rgba(255,255,255,.94); }
+
+/* Step check passed: everything turns clearly green. */
+.cam.cam-ok { box-shadow: 0 0 0 6px var(--good, #23885d); }
+.cam .ok-badge { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: var(--good, #23885d); color: #fff; padding: 8px 18px 8px 10px; border-radius: 999px; font-weight: 800; font-size: 1.3rem; box-shadow: 0 4px 14px rgba(0,0,0,.3); z-index: 3; }
+.cam .ok-badge b { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #fff; color: var(--good, #23885d); font-size: 1.8rem; }
+.tip.tip-ok { background: var(--good, #23885d) !important; color: #fff !important; }
+.meter.meter-ok .txt { color: var(--good, #23885d); }

@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { startCamera, stopCamera, snapshot, brightness } from '../lib/camera.js';
 import { loadTrackers, pickBrushHand, nextTs } from '../lib/tracking.js';
-import { sampleFace, blendSamples, compareStep, judge, expectedFor, doneTracker, eyeOpen } from '../lib/zoneCompare.js';
+import { sampleFace, blendSamples, compareStep, judge, expectedFor, doneTracker, eyeOpen, medianSamples, faceLight, glassesLikely, stepProgress, DARK_L } from '../lib/zoneCompare.js';
 import { loadGoalSamples, stepImages } from '../lib/stageImages.js';
 import BeforeAfter from './BeforeAfter.jsx';
 import {
@@ -22,6 +22,19 @@ const HOLD_MS = 2500; // keep each tip on screen at least this long (no flicker)
 const CHECK_EVERY_MS = 200; // color check rate
 const HAND_AWAY_MS = 800;   // the hand must be away this long before the color check talks
 const PRACTICE_MS = 7000;   // practice: time to build up one step
+const STEADY_MS = 1000;     // face still this long before the before frames are taken
+const BASE_FRAMES = 15;     // before = median of this many frames
+const TIP = (id, text, level = 'info') => ({ id, text, level });
+const TIP_HOLD = TIP('hold', 'Hold still and look at the camera, hands down. Taking a before picture…');
+const TIP_DARK = TIP('dark', 'Too dark. Face a lamp or window so I can see your makeup.', 'fix');
+const TIP_GLASSES = TIP('glasses', 'Glasses can confuse the check. Take them off if you can.', 'fix');
+
+// Where the face is and how big: to know if it is still, or moved far from the before frame.
+function facePose(face, w, h) {
+  const a = face[33], b = face[263], n = face[1];
+  return { x: n.x * w, y: n.y * h, size: Math.hypot((a.x - b.x) * w, (a.y - b.y) * h) || 1 };
+}
+const moved = (p, q) => Math.hypot(p.x - q.x, p.y - q.y) / p.size + Math.abs(p.size - q.size) / p.size;
 
 // Is any hand point over or near an eye? Then the brush hides the lid and we skip the check.
 function handNearEyes(hand, face, w, h) {
@@ -36,16 +49,15 @@ function handNearEyes(hand, face, w, h) {
 // Big progress bar: how much of this step's color change the camera sees so far.
 const NEED = { base: 0.55, crease: 0.5, outer: 0.5, liner: 0.5, wing: 0.4 };
 function Meter({ step, check, beforeSet, practice, onRetake }) {
-  const c = check?.c;
-  const cov = c ? ((c.right?.coverage || 0) + (c.left?.coverage || 0)) / 2 : 0;
-  const pct = check?.done ? 100 : Math.min(99, Math.round((cov / (NEED[step] || 0.5)) * 100));
+  const good = Boolean(check?.done || check?.j?.ok);
+  const pct = good ? 100 : Math.min(99, Math.round((check?.prog || 0) * 100));
   return (
-    <div className="meter" aria-live="polite">
+    <div className={`meter ${good ? 'meter-ok' : ''}`} aria-live="polite">
       <div className="txt">
-        <span>{check?.done ? '✓ Step done!' : !beforeSet ? 'Look at the camera, eyes open, hands down…' : 'Your progress on this step'}</span>
+        <span>{good ? '✓ Looks good!' : check?.dark ? 'Paused: too dark' : !beforeSet ? 'Hold still, eyes open, hands down…' : 'Your progress on this step'}</span>
         <span>{beforeSet ? `${pct}%` : ''}</span>
       </div>
-      <div className="track"><div className={`fill ${check?.done ? 'ok' : ''}`} style={{ width: `${beforeSet ? pct : 0}%` }} /></div>
+      <div className="track"><div className={`fill ${good ? 'ok' : ''}`} style={{ width: `${beforeSet ? pct : 0}%` }} /></div>
       {!practice && beforeSet && <button className="btn ghost small" style={{ justifySelf: 'start' }} onClick={onRetake}>Start this step again</button>}
     </div>
   );
@@ -208,16 +220,47 @@ export default function LiveCoach({ session, update, next, back }) {
     const st = cmpRef.current;
     if (step === 'prep') return null;
     const cur = sampleFace(img, face);
-    // Before = average of the first 3 good frames; now = running average (less webcam noise).
-    if (!st.before) {
-      st.n = (st.n || 0) + 1;
-      st.acc = blendSamples(st.acc, cur, 1 / st.n);
-      if (st.n >= 3) { st.before = st.acc; setBeforeSet(true); }
-      return null;
+    const live = !practiceOn.current;
+    if (live) {
+      const raw = faceLight(cur);
+      st.light = st.light == null || raw == null ? raw : st.light * 0.7 + raw * 0.3; // smoothed
+      const light = st.light;
+      const pose = facePose(face, img.width, img.height);
+      // Too dark: pause progress, say so.
+      if (light != null && light < DARK_L) {
+        st.result = { ok: false, tip: TIP_DARK };
+        st.done(false, now);
+        setCheck((p) => ({ ...(p || {}), dark: true }));
+        return st.result;
+      }
+      // The before frame was taken on a bare lid; if the light or the face changed a lot before
+      // any color went on, take it again.
+      if (st.before && (st.prog || 0) < 0.1 && (moved(st.beforePose, pose) > 0.5 || Math.abs(light - st.beforeLight) > 12)) {
+        st.before = null; st.now = null; st.frames = []; st.pose0 = null; setBeforeSet(false);
+      }
+      // Before = median of 15 frames once the face has been still for 1 s.
+      if (!st.before) {
+        if (!st.pose0 || moved(st.pose0, pose) > 0.08) { st.pose0 = pose; st.steadySince = now; st.frames = []; }
+        st.pose0 = pose;
+        if (now - st.steadySince >= STEADY_MS) st.frames.push(cur);
+        if (st.frames.length >= BASE_FRAMES) {
+          st.before = medianSamples(st.frames); st.frames = []; st.now = st.before; // smoothing starts from the bare lid
+          st.beforePose = pose; st.beforeLight = light; st.prog = 0;
+          st.glasses = glassesLikely(st.before);
+          setBeforeSet(true);
+        }
+        st.result = { ok: false, tip: TIP_HOLD };
+        setCheck({ prog: 0 });
+        return st.result;
+      }
     }
-    st.now = blendSamples(st.now, cur, 0.5);
-    const c = compareStep(step, st.before, st.now, profile, st.expected);
-    const j = judge(c);
+    // now = running average (less webcam noise).
+    st.now = blendSamples(st.now, cur, live ? 0.3 : 0.5);
+    const c = compareStep(step, st.before, st.now, profile, st.expected, { live });
+    let j = judge(c);
+    // Smooth progress over time so it does not jump with noise.
+    st.prog = (st.prog || 0) * 0.7 + stepProgress(c) * 0.3;
+    if (live && st.glasses && j.tip?.id === 'cmp_none' && !st.glassesShown) { st.glassesShown = true; j = { ...j, tip: TIP_GLASSES }; }
     const done = st.done(j.ok, now);
     st.result = j;
     if (done && !passedRef.current[step]) {
@@ -225,7 +268,7 @@ export default function LiveCoach({ session, update, next, back }) {
       setPassed(passedRef.current);
       if (voiceRef.current) speak('Step done. Nice work.', { minGapMs: 0 });
     }
-    setCheck({ c, j, done: done || Boolean(passedRef.current[step]) });
+    setCheck({ c, j, prog: st.prog, done: done || Boolean(passedRef.current[step]) });
     return j;
   }
 
@@ -343,6 +386,7 @@ export default function LiveCoach({ session, update, next, back }) {
   const stepGoal = stepView.show || goal;
   const stepBefore = stepView.show && stepView.from ? images[stepView.from] : null;
   const canPractice = Boolean(goalData);
+  const good = step !== 'prep' && Boolean(check?.done || check?.j?.ok);
   const go = (d) => setStepIdx((i) => Math.max(0, Math.min(steps.length - 1, i + d)));
 
   return (
@@ -358,15 +402,15 @@ export default function LiveCoach({ session, update, next, back }) {
       </div>
 
       <div className="views">
-        <div className="cam" style={{ aspectRatio: '4 / 3' }}>
+        <div className={`cam ${good ? 'cam-ok' : ''}`} style={{ aspectRatio: '4 / 3' }}>
           <video ref={videoRef} className="mirror" playsInline muted style={{ visibility: practice ? 'hidden' : 'visible' }} />
           {practice && <canvas ref={practiceRef} className="practice" />}
           <canvas ref={canvasRef} className={`overlay ${practice ? '' : 'mirror'}`} />
-          {check?.done && <div className="done-badge">✓ Step done</div>}
+          {good && <div className="ok-badge" aria-hidden="true"><b>✓</b><span>Looks good!</span></div>}
           {practice && <div className="hint" style={{ left: "auto", right: 10, transform: "none" }}>Practice</div>}
           {status && !practice && <div className="hint" role="status">{status}</div>}
-          <div className={`tip cam-tip ${tip?.level || 'info'}`} role="status" aria-live="polite">
-            {tip ? tip.text : guide.lines[0]}
+          <div className={`tip cam-tip ${good ? 'good tip-ok' : tip?.level || 'info'}`} role="status" aria-live="polite">
+            {good ? `✓ Looks good! ${check?.j?.tip?.id === 'cmp_ok' || !check?.j?.tip ? 'Tap Next step.' : check.j.tip.text.replace(/^Looks good\.\s*/, '')}` : tip ? tip.text : guide.lines[0]}
           </div>
         </div>
         {step !== 'prep' && stepGoal && (

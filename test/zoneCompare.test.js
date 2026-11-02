@@ -88,3 +88,51 @@ test('step done only after the check holds', () => {
   assert.equal(done(true, 1300), false);
   assert.equal(done(true, 2900), true);
 });
+
+// ---- live camera: no false progress on a bare face ----
+import { medianSamples, stepProgress, faceLight, glassesLikely } from '../src/lib/zoneCompare.js';
+function rng(seed) { return () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296); }
+// Bare skin with per-pixel webcam noise (+-amp) and an overall brightness shift (auto-exposure).
+function noisy(seed, amp = 8, shift = 0, paint = []) {
+  const img = image(paint, 0), r = rng(seed);
+  for (let i = 0; i < W * H * 4; i += 4) for (let c = 0; c < 3; c++) img.data[i + c] = img.data[i + c] + shift + Math.round((r() * 2 - 1) * amp);
+  return img;
+}
+const liveBefore = medianSamples(Array.from({ length: 15 }, (_, i) => snap(noisy(i + 1))));
+const prog = (now, step = 'base') => stepProgress(compareStep(step, liveBefore, now, {}, null, { live: true }));
+
+test('live: bare face vs the same face with noise stays under 5%', () => {
+  for (const step of ['base', 'crease', 'outer', 'liner', 'wing']) {
+    assert.ok(prog(snap(noisy(99, 10)), step) < 0.05, step);
+  }
+  assert.equal(judge(compareStep('base', liveBefore, snap(noisy(98, 10)), {}, null, { live: true })).tip.id, 'cmp_none');
+});
+
+test('live: brightness / exposure shift on a bare face stays under 5%', () => {
+  for (const shift of [-25, -12, 15, 30]) assert.ok(prog(snap(noisy(50 + shift, 8, shift))) < 0.05, `shift ${shift}`);
+});
+
+test('live: bare-face tip is the first action of the step, not "fill in more"', () => {
+  const j = judge(compareStep('base', liveBefore, snap(noisy(7)), {}, null, { live: true }));
+  assert.match(j.tip.text, /Sweep the brown shadow across your whole lid/);
+});
+
+test('live: real color on both lids makes progress', () => {
+  const p = prog(snap(noisy(5, 8, 0, [lidR, lidL])));
+  assert.ok(p > 0.9, `progress ${p}`);
+});
+
+test('live: one eye done names the other eye and the area', () => {
+  const j = judge(compareStep('base', liveBefore, snap(noisy(6, 8, 0, [lidR, { ...lidL, x0: 552, x1: 566 }])), {}, null, { live: true }));
+  assert.equal(j.tip.id, 'cmp_cover');
+  assert.match(j.tip.text, /left eye, near the (outer|inner) corner|left eye, in the middle/);
+});
+
+test('live: face light and glasses guess', () => {
+  assert.ok(faceLight(liveBefore) > 30);
+  assert.equal(glassesLikely(liveBefore), false);
+  // Dark frame rims across the lids -> glasses.
+  const rims = [];
+  for (const x0 of [330, 540]) { rims.push({ x0, x1: x0 + 130, y0: 395, y1: 399, c: [20, 20, 20] }, { x0, x1: x0 + 130, y0: 420, y1: 424, c: [20, 20, 20] }, { x0, x1: x0 + 130, y0: 405, y1: 409, c: [20, 20, 20] }); }
+  assert.equal(glassesLikely(snap(image(rims))), true);
+});

@@ -301,7 +301,7 @@ export function coachTip(step, face, hand, history, ctx) {
   const frames = [eyeFrame(face, 'right', w, h), eyeFrame(face, 'left', w, h)];
 
   if (!hand) {
-    if (now - (history.lastHandAt || 0) > 1000) return T('no_hand', 'Bring your brush hand into view.', 'info');
+    if (now - (history.lastHandAt || 0) > 1000) return T('no_hand', 'Hold your brush up to the camera to start.', 'info');
     return null; // brief loss: keep the last tip
   }
   history.lastHandAt = now;
