@@ -71,7 +71,7 @@ async function runTask(type, body) {
 
 function friendlyError(code, message) {
   const map = {
-    error_src_face_too_small: 'Your face is too small in the photo. Move closer.',
+    error_src_face_too_small: 'Your face is too small in the photo. Tap Take a selfie again and hold the camera closer, so your face fills the oval.',
     error_below_min_image_size: 'The photo is too small. Try again with the camera closer.',
     error_no_face: 'No face found. Face the camera in good light.',
   };

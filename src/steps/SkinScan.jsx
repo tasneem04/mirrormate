@@ -160,7 +160,15 @@ export default function SkinScan({ session, update, next, config }) {
             {!canGoLive && <p className="small muted" style={{ margin: 0 }}>Live scan is off on this site. Use a sample photo to try every step.</p>}
             {canGoLive && locked && <p className="small muted" style={{ margin: 0 }}>Enter the passcode to scan your own photo.</p>}
             {!canGoLive && !demo.available && <p className="error">No API key and no demo data yet. See the README.</p>}
-            <p className="small muted" style={{ margin: 0 }}>Tip: face the camera, light in front of you, no eye makeup yet.</p>
+            <div className="small" style={{ margin: 0 }}>
+              <strong>Selfie tips:</strong>
+              <ol style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+                <li>Tap <strong>Take a selfie</strong>, then tap <strong>Allow</strong> when the browser asks for the camera.</li>
+                <li>Come close: your face should fill the oval on screen.</li>
+                <li>Look straight at the camera, with light in front of you.</li>
+                <li>No glasses, hair off your face, no eye makeup yet.</li>
+              </ol>
+            </div>
           </div>
         )}
         {error && <p className="error" role="alert">{error}</p>}
@@ -170,7 +178,7 @@ export default function SkinScan({ session, update, next, config }) {
       <div className="cam" hidden={phase !== 'camera'}>
         <video ref={videoRef} className="mirror" />
         <div className="oval" />
-        <div className="hint">Fit your face in the oval</div>
+        <div className="hint">Move closer until your face fills the oval, then tap Take photo</div>
         <div className="cam-btn"><button className="btn" onClick={takePhoto}>Take photo</button></div>
       </div>
       <div className="card stack" hidden={phase === 'camera'}>
