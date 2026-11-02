@@ -75,6 +75,10 @@ function friendlyError(code, message) {
     error_below_min_image_size: 'The photo is too small. Try again with the camera closer.',
     error_no_face: 'No face found. Face the camera in good light.',
   };
+  const text = `${code || ''} ${message || ''}`.toLowerCase();
+  if (text.includes('dark')) return 'Your photo is too dark. Face a window or a lamp so light falls on your face, then take the selfie again.';
+  if (text.includes('bright') || text.includes('overexpos')) return 'Your photo is too bright. Move away from direct light and take the selfie again.';
+  if (text.includes('blur')) return 'Your photo is blurry. Hold still and take the selfie again.';
   return map[code] || message || code || 'Something went wrong.';
 }
 

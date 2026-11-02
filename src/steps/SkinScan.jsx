@@ -74,7 +74,22 @@ export default function SkinScan({ session, update, next, config }) {
     }
   }
 
+  // Average brightness (0-255) of the middle of the frame, where the face is.
+  function faceBrightness(video) {
+    const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    c.getContext('2d').drawImage(video, vw * 0.3, vh * 0.2, vw * 0.4, vh * 0.6, 0, 0, 64, 64);
+    const d = c.getContext('2d').getImageData(0, 0, 64, 64).data;
+    let sum = 0;
+    for (let i = 0; i < d.length; i += 4) sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    return sum / (d.length / 4);
+  }
+
   function takePhoto() {
+    const b = faceBrightness(videoRef.current);
+    if (b < 60) { setError('Too dark. Face a window or a lamp so light falls on your face, then tap Take photo again.'); return; }
+    if (b > 225) { setError('Too bright. Move away from direct light, then tap Take photo again.'); return; }
+    setError('');
     const dataUrl = snapshot(videoRef.current, { maxSide: 1280 });
     stopCamera(streamRef.current);
     analyze(dataUrl);
@@ -178,7 +193,7 @@ export default function SkinScan({ session, update, next, config }) {
       <div className="cam" hidden={phase !== 'camera'}>
         <video ref={videoRef} className="mirror" />
         <div className="oval" />
-        <div className="hint">Move closer until your face fills the oval, then tap Take photo</div>
+        <div className="hint">{phase === 'camera' && error ? error : 'Move closer until your face fills the oval, then tap Take photo'}</div>
         <div className="cam-btn"><button className="btn" onClick={takePhoto}>Take photo</button></div>
       </div>
       <div className="card stack" hidden={phase === 'camera'}>
