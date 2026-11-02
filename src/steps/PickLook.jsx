@@ -36,7 +36,7 @@ export default function PickLook({ session, update, next, back }) {
     <section className="stack">
       <div>
         <h2>Pick your look</h2>
-        <p className="muted">Each look is shown on your own face, in shades picked for your {profile.undertone} undertone. This is your goal.</p>
+        <p className="muted">Shown on your face, in colors for your {profile.undertone} undertone.</p>
       </div>
       <div className="grid-3" role="radiogroup" aria-label="Eye looks">
         {LOOKS.map((look) => (
@@ -47,7 +47,8 @@ export default function PickLook({ session, update, next, back }) {
             aria-checked={picked === look.id}
             onClick={() => setPicked(look.id)}
           >
-            <div className="img">
+            <div className="img" style={{ position: 'relative' }}>
+              {mode === 'demo' && !demo.vto(look.id) && images[look.id] && <span className="badge" style={{ position: 'absolute', left: 8, top: 8 }}>Preview in live mode</span>}
               {images[look.id] ? <img src={images[look.id]} alt={`${look.name} on your face`} />
                 : errors[look.id] ? <span className="small muted" style={{ padding: 12 }}>{errors[look.id]}</span>
                 : <span className="spinner" aria-label="Loading" />}
@@ -63,7 +64,7 @@ export default function PickLook({ session, update, next, back }) {
         ))}
       </div>
       <div className="actions">
-        <button className="btn" onClick={choose} disabled={!images[picked]}>Use {LOOKS.find((l) => l.id === picked)?.name.toLowerCase()}</button>
+        <button className="btn big" onClick={choose} disabled={!images[picked]}>Use {LOOKS.find((l) => l.id === picked)?.name.toLowerCase()}</button>
         <button className="btn ghost" onClick={back}>Back</button>
       </div>
     </section>

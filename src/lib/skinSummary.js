@@ -92,7 +92,7 @@ const ANGLE_TEXT = {
 // Skin prep before eye makeup, by skin type (docs/knowledge.md).
 export function prepTip(p) {
   if (p?.sensitive) return 'Sensitive skin: use a fragrance-free moisturizer, patch-test new products, and skip the inner waterline.';
-  if (p?.oily && p?.dry) return 'Combination skin: light moisturizer all over, eye primer on the lids, a little powder on the T-zone.';
+  if (/combination/i.test(p?.skinType || '') || (p?.oily && p?.dry)) return 'Combination skin: light moisturizer all over, eye primer on the lids, a little powder on the T-zone.';
   if (p?.oily) return 'Oily skin: gentle cleanse, oil-free moisturizer, then eye primer. Set the lids with a little powder.';
   if (p?.dry) return 'Dry skin: cleanse, moisturize and wait a minute before makeup. Use a hydrating primer or cream shadow.';
   return 'Cleanse, a light moisturizer, wait a minute, then a thin layer of eye primer or concealer.';
@@ -123,7 +123,8 @@ export function profileCards(p) {
     cards.push({ title: 'Under the eyes', text: 'Some darkness under the eyes. A little concealer before shadow makes the look brighter.' });
   }
   if (p.faceShape && p.faceShape !== 'Unknown') {
-    cards.push({ title: 'Face shape', text: `${p.faceShape}.` });
+    const FACE = { InvTriangle: 'Heart', Oblong: 'Long', Long: 'Long' };
+    cards.push({ title: 'Face shape', text: `${FACE[p.faceShape] || p.faceShape}.` });
   }
   return cards;
 }

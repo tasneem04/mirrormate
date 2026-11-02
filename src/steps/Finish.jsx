@@ -1,6 +1,7 @@
 // Step 5: before / goal / after side by side, plus 2-3 tips for next time from the coach log.
 import React from 'react';
 import { NEXT_TIME } from '../lib/coachRules.js';
+import { fileToDataUrl } from '../lib/camera.js';
 
 // Pick the tips to show: the fixes the coach gave most often, then a symmetry note.
 function nextTimeTips(log) {
@@ -52,9 +53,14 @@ async function downloadTrio(srcs) {
   a.click();
 }
 
-export default function Finish({ session, restart }) {
+export default function Finish({ session, update, restart }) {
   const { selfie, goal, after, look, coachLog } = session;
   const tips = nextTimeTips(coachLog);
+  async function onFile(e) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (f && update) update({ after: await fileToDataUrl(f, 1280) });
+  }
 
   return (
     <section className="stack">
@@ -74,7 +80,11 @@ export default function Finish({ session, restart }) {
         </ol>
       </div>
       <div className="actions">
-        <button className="btn" onClick={() => downloadTrio([selfie, goal, after])}>Save the comparison</button>
+        <button className="btn big" onClick={() => downloadTrio([selfie, goal, after])}>Save the comparison</button>
+        <label className="btn ghost">
+          {after ? 'Use a different after photo' : 'Upload your after photo'}
+          <input type="file" accept="image/jpeg,image/png" hidden onChange={onFile} />
+        </label>
         <button className="btn ghost" onClick={restart}>Try another look</button>
       </div>
     </section>

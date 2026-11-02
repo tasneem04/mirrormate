@@ -12,12 +12,13 @@ import { NAME, PARTNER, TAGLINE } from './brand.js';
 
 document.title = PARTNER ? `${NAME} × ${PARTNER}` : NAME;
 
+// One short instruction per step, shown big under the progress bar.
 const STEPS = [
-  { id: 'scan', label: 'Skin scan' },
-  { id: 'look', label: 'Pick a look' },
-  { id: 'makeup', label: 'My makeup' },
-  { id: 'coach', label: 'Live coach' },
-  { id: 'finish', label: 'Finish' },
+  { id: 'scan', label: 'Your face', hint: 'Take a selfie, upload a photo, or use a sample photo.' },
+  { id: 'look', label: 'Pick a look', hint: 'Tap the look you want to learn.' },
+  { id: 'makeup', label: 'Your makeup', hint: 'Show each eye product: camera, photo upload, or the list.' },
+  { id: 'coach', label: 'Live coach', hint: 'Follow each step in the mirror. Tips pop up as you go.' },
+  { id: 'finish', label: 'Done', hint: 'See your before, goal and after side by side.' },
 ];
 
 export default function App() {
@@ -63,10 +64,11 @@ export default function App() {
         <ol className="progress" aria-label="Progress">
           {STEPS.map((s, i) => (
             <li key={s.id} className={i === step ? 'on' : i < step ? 'done' : ''} aria-current={i === step ? 'step' : undefined}>
-              <span>{s.label}</span>
+              <span>{i + 1}. {s.label}</span>
             </li>
           ))}
         </ol>
+        <p className="step-hint"><strong>Step {step + 1}: {STEPS[step].label}.</strong> {STEPS[step].hint}</p>
       </header>
 
       <main>

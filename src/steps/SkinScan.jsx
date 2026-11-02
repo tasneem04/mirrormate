@@ -85,6 +85,7 @@ export default function SkinScan({ session, update, next, config }) {
     if (f) analyze(await fileToDataUrl(f));
   }
 
+  // The sample photo replays a real saved YouCam scan of public/samples/face-1.jpg (no units).
   function useDemo() {
     update({ mode: 'demo', selfie: demo.selfie, scanMeta: null, profile: buildProfile(demo.scan) });
     setPhase('results');
@@ -94,8 +95,8 @@ export default function SkinScan({ session, update, next, config }) {
     return (
       <section className="stack">
         <div>
-          <h2>Your skin scan</h2>
-          <p className="muted">Here is what we found, in plain words. We use it to pick your colors.</p>
+          <h2>Your results</h2>
+          <p className="muted">{session.mode === 'demo' ? 'Sample photo: a real saved scan.' : 'From your photo.'} We use this to pick your colors.</p>
         </div>
         <div className="grid-2">
           <img src={session.selfie} alt="Your selfie" style={{ borderRadius: 20, width: '100%', maxHeight: 520, objectFit: 'cover' }} />
@@ -110,8 +111,8 @@ export default function SkinScan({ session, update, next, config }) {
               </div>
             ))}
             <div className="actions">
-              <button className="btn" onClick={next}>Next: pick a look</button>
-              <button className="btn ghost" onClick={() => setPhase('choose')}>Scan again</button>
+              <button className="btn big" onClick={next}>Next: pick a look</button>
+              <button className="btn ghost" onClick={() => setPhase('choose')}>Use another photo</button>
             </div>
           </div>
         </div>
@@ -123,9 +124,7 @@ export default function SkinScan({ session, update, next, config }) {
     <section className="grid-2">
       <div className="stack">
         <h1>Do your eyes. Get a <em>tip</em> as you go.</h1>
-        <p className="lead">
-          Tutorials go fast. {NAME} watches while you apply eye makeup and tells you what to fix, one small tip at a time.
-        </p>
+        <p className="lead">{NAME} watches while you do your eye makeup and gives one small tip at a time.</p>
 
         {phase === 'working' ? (
           <div className="card row" role="status"><span className="spinner" aria-hidden="true" /> {progress || 'Working...'}</div>
@@ -138,19 +137,22 @@ export default function SkinScan({ session, update, next, config }) {
               </label>
             )}
             <div className="actions">
-              {canGoLive && <button className="btn" onClick={openCamera} disabled={locked}>Take a selfie</button>}
-              {canGoLive && (
-                <label className={`btn ghost ${locked ? 'disabled' : ''}`} aria-disabled={locked}>
-                  Upload a photo
-                  <input type="file" accept="image/jpeg,image/png" hidden onChange={onFile} disabled={locked} />
-                </label>
-              )}
-              {demo.available && (
-                <button className={canGoLive ? 'btn ghost' : 'btn'} onClick={useDemo}>Try the demo</button>
-              )}
+              <button className="btn big" onClick={openCamera} disabled={!canGoLive || locked}>Take a selfie</button>
+              <label className={`btn big ghost ${!canGoLive || locked ? 'disabled' : ''}`} aria-disabled={!canGoLive || locked}>
+                Upload a photo
+                <input type="file" accept="image/jpeg,image/png" hidden onChange={onFile} disabled={!canGoLive || locked} />
+              </label>
             </div>
+            {demo.available && (
+              <button className="btn big ghost" onClick={useDemo}>
+                <img src={demo.selfie} alt="" width="36" height="36" style={{ borderRadius: '50%', objectFit: 'cover' }} />
+                Use a sample photo (no camera needed)
+              </button>
+            )}
+            {!canGoLive && <p className="small muted" style={{ margin: 0 }}>Live scan is off on this site. Use the sample photo to try every step.</p>}
+            {canGoLive && locked && <p className="small muted" style={{ margin: 0 }}>Enter the passcode to scan your own photo.</p>}
             {!canGoLive && !demo.available && <p className="error">No API key and no demo data yet. See the README.</p>}
-            <p className="small muted" style={{ margin: 0 }}>For the best scan: face the camera, light from the front, no eye makeup yet.</p>
+            <p className="small muted" style={{ margin: 0 }}>Tip: face the camera, light in front of you, no eye makeup yet.</p>
           </div>
         )}
         {error && <p className="error" role="alert">{error}</p>}

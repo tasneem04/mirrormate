@@ -41,3 +41,13 @@ test('prep and step text follow the profile', () => {
   assert.match(stepHow('crease', { eyelid: 'Single-lid' }), /gradient/);
   assert.match(stepHow('wing', { eyeAngle: 'Downturned' }), /up/);
 });
+
+test('saved demo scan: combination prep tip, friendly face shape, smoky look', async () => {
+  const fs = await import('node:fs');
+  const { buildProfile, prepTip, profileCards, recommendedLook } = await import('../src/lib/skinSummary.js');
+  const p = buildProfile(JSON.parse(fs.readFileSync(new URL('../src/demo/scan.json', import.meta.url))));
+  assert.equal(p.skinType, 'Combination');
+  assert.match(prepTip(p), /^Combination/);
+  assert.equal(profileCards(p).find((c) => c.title === 'Face shape')?.text, 'Heart.');
+  assert.ok(recommendedLook(p));
+});

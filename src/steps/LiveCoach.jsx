@@ -194,6 +194,7 @@ export default function LiveCoach({ session, update, next, back }) {
           {tip ? tip.text : status ? 'Getting ready...' : stepHow(step, profile)}
         </div>
         {error && <p className="error" role="alert">{error}</p>}
+        {error && <button className="btn big ghost" onClick={finish}>No camera? Skip to the end (upload an after photo there)</button>}
         <p className="small muted" style={{ margin: 0 }}>
           The dot shows where the coach thinks your {useBrush ? 'brush tip' : 'fingertip'} is. The pink guide shows where to work.
         </p>
@@ -213,10 +214,10 @@ export default function LiveCoach({ session, update, next, back }) {
               </li>
             ))}
           </ol>
-          <p className="small" style={{ margin: 0 }}><strong>{info.title}:</strong> {stepHow(step, profile)}</p>
+          <p className="small" style={{ margin: 0 }}><strong>{stepIdx + 1} of {steps.length} · {info.title}:</strong> {stepHow(step, profile)}</p>
           <div className="actions">
-            {!last && <button className="btn" onClick={() => setStepIdx((i) => i + 1)}>Next step</button>}
-            {last && <button className="btn" onClick={finish}>Finish and take photo</button>}
+            {!last && <button className="btn big" onClick={() => setStepIdx((i) => i + 1)}>Next step</button>}
+            {last && <button className="btn big" onClick={finish}>Finish and take photo</button>}
             {stepIdx > 0 && <button className="btn ghost small" onClick={() => setStepIdx((i) => i - 1)}>Previous</button>}
           </div>
         </div>

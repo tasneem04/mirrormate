@@ -1,0 +1,137 @@
+{
+  "skin": {
+    "status": "success",
+    "results": {
+      "output": [
+        {
+          "ui_score": 67,
+          "mask_urls": [
+            "https://yce-us.s3-accelerate.amazonaws.com/ttl30/518372116765082925/123977144378/v2/aeMNNB0KmUIP8rnQ996tC5Q/bf843dff-422a-4d6e-9fce-20df296e07f9_dark_circle_v2_output.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261101T220547Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=AKIARB77EV5Y5D7DAE3S%2F20261101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=a495df6ec3c49c5d0564c6c96c58055a78b5a4e3f20246509962d12e37ff9f30"
+          ],
+          "raw_score": 56.43668174743652,
+          "type": "dark_circle_v2",
+          "url": null
+        },
+        {
+          "ui_score": 74,
+          "mask_urls": [
+            "https://yce-us.s3-accelerate.amazonaws.com/ttl30/518372116765082925/123977144378/v2/aeMNNB0KmUIP8rnQ996tC5Q/bf843dff-422a-4d6e-9fce-20df296e07f9_oiliness_output.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261101T220547Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=AKIARB77EV5Y5D7DAE3S%2F20261101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=0304ec74f27bc3fe70f76463187a96c287bcd0755e6aefb20efc9f1e7811dfb7"
+          ],
+          "raw_score": 65.064697265625,
+          "type": "oiliness",
+          "url": null
+        },
+        {
+          "ui_score": 64,
+          "mask_urls": [
+            "https://yce-us.s3-accelerate.amazonaws.com/ttl30/518372116765082925/123977144378/v2/aeMNNB0KmUIP8rnQ996tC5Q/bf843dff-422a-4d6e-9fce-20df296e07f9_moisture_output.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261101T220547Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=AKIARB77EV5Y5D7DAE3S%2F20261101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=236bcf681edd75e658e84d26b0b70bfaa96a73913ad725095e4c664d8fd5a24f"
+          ],
+          "raw_score": 33.96739959716797,
+          "type": "moisture",
+          "url": null
+        },
+        {
+          "mask_urls": [
+            "https://yce-us.s3-accelerate.amazonaws.com/ttl30/518372116765082925/123977144378/v2/aeMNNB0KmUIP8rnQ996tC5Q/bf843dff-422a-4d6e-9fce-20df296e07f9_skin_type_output.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261101T220547Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=AKIARB77EV5Y5D7DAE3S%2F20261101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=2d5c34f522975a7b76ed4ed25502030ed6fae89170c1b0745d4d47e0029c72cb"
+          ],
+          "type": "skin_type",
+          "region": "whole",
+          "skin_type": "Combination",
+          "url": null
+        },
+        {
+          "mask_urls": [
+            "https://yce-us.s3-accelerate.amazonaws.com/ttl30/518372116765082925/123977144378/v2/aeMNNB0KmUIP8rnQ996tC5Q/bf843dff-422a-4d6e-9fce-20df296e07f9_skin_type_t_zone_output.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261101T220547Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=AKIARB77EV5Y5D7DAE3S%2F20261101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=82b671ab56f03d9581627afd401763ede7473f314211301a21a5fb0f366e4ec4"
+          ],
+          "type": "skin_type",
+          "region": "t_zone",
+          "skin_type": "Oily",
+          "url": null
+        },
+        {
+          "mask_urls": [
+            "https://yce-us.s3-accelerate.amazonaws.com/ttl30/518372116765082925/123977144378/v2/aeMNNB0KmUIP8rnQ996tC5Q/bf843dff-422a-4d6e-9fce-20df296e07f9_skin_type_u_zone_output.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261101T220547Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=AKIARB77EV5Y5D7DAE3S%2F20261101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=7691bab080888c130ecdd61c3b4d7454ade41e44facaca5b599e41f6edd172fa"
+          ],
+          "type": "skin_type",
+          "region": "u_zone",
+          "skin_type": "Dry",
+          "url": null
+        },
+        {
+          "score": 68.33333333333333,
+          "type": "all",
+          "url": null
+        },
+        {
+          "score": 40,
+          "type": "skin_age",
+          "url": null
+        },
+        {
+          "mask_urls": [
+            "https://yce-us.s3-accelerate.amazonaws.com/ttl30/518372116765082925/123977144378/v2/aeMNNB0KmUIP8rnQ996tC5Q/bf843dff-422a-4d6e-9fce-20df296e07f9_resize_image.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20261101T220547Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Credential=AKIARB77EV5Y5D7DAE3S%2F20261101%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=6f24aaa8827a4f658f15e52df7d6a1ef873af7fe3ade445b0ab5aae25362a427"
+          ],
+          "type": "resize_image",
+          "url": null
+        }
+      ]
+    },
+    "error": null,
+    "errorMessage": null
+  },
+  "tone": {
+    "status": "success",
+    "results": {
+      "color": {
+        "eye_color": "#1b1311",
+        "eye_color_name": "Brown",
+        "lip_color": "#926051",
+        "eyebrow_color": "#825840",
+        "skin_color": "#6c4d3a",
+        "hair_color": "#FAF0BE",
+        "hair_color_name": "Blonde"
+      },
+      "face_quality": {
+        "has_face": true,
+        "area": "good",
+        "frontal": "good",
+        "lighting": "good",
+        "faceangle": "good"
+      }
+    },
+    "error": null,
+    "errorMessage": null
+  },
+  "face": {
+    "status": "success",
+    "results": {
+      "nose": {},
+      "agegender": {},
+      "eyelid": {
+        "left_eyelid": "Hooded-lid",
+        "right_eyelid": "Hooded-lid",
+        "left_angle": "Upturned",
+        "right_angle": "Upturned",
+        "left_shape": "Almond",
+        "right_shape": "Almond"
+      },
+      "eyebrow": {
+        "left_shape": "Straight",
+        "right_shape": "Straight"
+      },
+      "color": {},
+      "face_quality": {
+        "has_face": true,
+        "area": "good",
+        "frontal": "good",
+        "lighting": "good",
+        "faceangle": "good"
+      },
+      "cheekbone": {},
+      "faceshape": "InvTriangle",
+      "facialratio": {}
+    },
+    "error": null,
+    "errorMessage": null
+  }
+}

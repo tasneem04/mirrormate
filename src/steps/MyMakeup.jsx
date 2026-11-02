@@ -6,6 +6,33 @@ import { startCamera, stopCamera } from '../lib/camera.js';
 import { PRODUCTS, productById, shadeVerdict, sampleColor, missingTools, TOOL_SWAPS, productAdvice, formulaNotes, PRODUCT_KNOWLEDGE } from '../lib/products.js';
 import { classifyProduct, loadClassifier, readLabel, mergeLabelHint } from '../lib/productVision.js';
 
+// Free sample product photos (public/samples, see CREDITS.md) for trying without a camera.
+const SAMPLES = [
+  ['palette-63f72c2e.jpg', 'Closed palette (shows the open-it tip)'],
+  ['mascara-2b2985be.jpg', 'Vintage mascara (try Read the label)'],
+  ['liquid-liner-25bfdad6.jpg', 'Liquid liner'],
+  ['pencil-53e546ce.jpg', 'Eyeliner pencil'],
+  ['palette-brushes-398756f9.jpg', 'Palette and brushes'],
+  ['lipstick-6d4952d2.jpg', 'Lipstick (not an eye product)'],
+];
+
+// Load an image (file or URL) into a canvas, at most maxSide px.
+function imageToCanvas(src, maxSide = 900) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * k);
+      c.height = Math.round(img.naturalHeight * k);
+      c.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0, c.width, c.height);
+      resolve(c);
+    };
+    img.onerror = () => reject(new Error('Could not open that image.'));
+    img.src = src;
+  });
+}
+
 const VERDICT_LABEL = { great: 'Great match', ok: 'Works', careful: 'Be careful' };
 
 // Copy the centered scan box of the (cover-fitted, mirrored) camera view into a canvas.
@@ -58,15 +85,32 @@ export default function MyMakeup({ session, update, next, back }) {
     }
   }
 
-  async function scan() {
+  function scan() {
+    analyze(cropBox(videoRef.current, camRef.current));
+  }
+
+  async function onFile(e) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    try { analyze(await imageToCanvas(URL.createObjectURL(f))); } catch (err) { setError(err.message); }
+  }
+
+  async function useSample(file) {
+    try { analyze(await imageToCanvas(`/samples/${file}`)); } catch (err) { setError(err.message); }
+  }
+
+  // Name the product in a canvas (camera crop, upload or sample).
+  async function analyze(canvas) {
     setError('');
-    const canvas = cropBox(videoRef.current, camRef.current);
+    setPicking(null);
     frozenRef.current = canvas;
     setFrozen(canvas.toDataURL('image/jpeg', 0.9));
     setGuesses(null);
     setLabel(null);
     setBusy('Looking at your item...');
     try {
+      await loadClassifier((pct) => setBusy(pct < 100 ? `Loading the product model (once)... ${pct}%` : 'Looking at your item...'));
       const r = await classifyProduct(canvas);
       setSure(r.sure);
       if (r.notProduct) {
@@ -141,8 +185,8 @@ export default function MyMakeup({ session, update, next, back }) {
   return (
     <section className="stack">
       <div>
-        <h2>My makeup</h2>
-        <p className="muted">Hold each eye product or brush inside the box and tap Scan. Open palettes so the colors show. Or pick it from the list.</p>
+        <h2>Your makeup</h2>
+        <p className="muted">One product at a time. Open palettes so the colors show.</p>
       </div>
 
       <div className="grid-2">
@@ -159,15 +203,31 @@ export default function MyMakeup({ session, update, next, back }) {
               />
             )}
             {camOn && !frozen && <div className="box" />}
-            {!camOn && (
+            {!camOn && !frozen && (
               <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' }}>
-                <button className="btn" onClick={openCamera}>Open camera</button>
+                <button className="btn big" onClick={openCamera}>Open camera</button>
               </div>
             )}
             {picking && <div className="hint">Tap the shade you will use</div>}
           </div>
 
-          {camOn && !frozen && <button className="btn" onClick={scan} disabled={Boolean(busy)}>Scan this item</button>}
+          <div className="actions" style={{ position: 'static', padding: 0, background: 'none' }}>
+            {camOn && !frozen && <button className="btn big" onClick={scan} disabled={Boolean(busy)}>Scan this item</button>}
+            <label className={`btn big ghost ${busy ? 'disabled' : ''}`}>
+              Upload a photo
+              <input type="file" accept="image/*" hidden onChange={onFile} disabled={Boolean(busy)} />
+            </label>
+          </div>
+          <div className="stack" style={{ gap: 6 }}>
+            <span className="small muted">No products here? Try a sample photo:</span>
+            <div className="sample-row">
+              {SAMPLES.map(([file, name]) => (
+                <button key={file} onClick={() => useSample(file)} disabled={Boolean(busy)} title={name} aria-label={`Sample: ${name}`}>
+                  <img src={`/samples/${file}`} alt="" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          </div>
           {busy && <div className="row small"><span className="spinner" aria-hidden="true" /><span role="status">{busy}</span></div>}
 
           {guesses && guesses.length > 0 && (
@@ -181,7 +241,7 @@ export default function MyMakeup({ session, update, next, back }) {
                     {g.product.label} <span className="muted small">{Math.round(g.score * 100)}%</span>
                   </button>
                 ))}
-                <button className="chip" onClick={() => { setGuesses(null); setFrozen(null); }}>None of these</button>
+                <button className="chip" onClick={() => { setGuesses(null); setFrozen(null); setLabel(null); }}>None of these</button>
               </div>
               <p className="small muted" style={{ margin: 0 }}>{PRODUCT_KNOWLEDGE[guesses[0].product.id]?.what}</p>
               {!label && <button className="btn ghost small" onClick={onReadLabel} disabled={Boolean(busy)}>Read the label</button>}
@@ -245,7 +305,7 @@ export default function MyMakeup({ session, update, next, back }) {
           )}
 
           <div className="actions">
-            <button className="btn" onClick={() => { stopCamera(streamRef.current); next(); }}>Next: start coaching</button>
+            <button className="btn big" onClick={() => { stopCamera(streamRef.current); next(); }}>Next: start coaching</button>
             <button className="btn ghost" onClick={back}>Back</button>
           </div>
         </div>

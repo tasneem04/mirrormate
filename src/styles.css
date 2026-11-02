@@ -157,3 +157,13 @@ input[type='text'], input[type='password'] { font: inherit; padding: 10px 16px; 
 
 .error { background: var(--warn-soft); color: var(--warn); border-radius: 12px; padding: 10px 14px; margin: 0; }
 .footer-note { margin-top: 32px; text-align: center; font-size: 0.8rem; color: var(--muted); }
+
+/* Beginner-friendly: one big instruction line per step, big buttons. */
+.step-hint { margin: 10px 0 0; font-size: 1.05rem; line-height: 1.4; padding: 10px 14px; border-radius: 14px; background: var(--accent-soft); }
+.btn { min-height: 52px; font-size: 1.02rem; padding: 14px 24px; }
+.btn.small { min-height: 42px; font-size: 0.92rem; padding: 8px 16px; }
+.btn.big { min-height: 60px; font-size: 1.1rem; padding: 16px 28px; }
+.sample-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sample-row button { border: 2px solid var(--line); border-radius: 12px; padding: 0; background: var(--card); cursor: pointer; overflow: hidden; width: 72px; height: 72px; }
+.sample-row button:hover, .sample-row button:focus-visible { border-color: var(--accent); }
+.sample-row img { width: 100%; height: 100%; object-fit: cover; display: block; }
