@@ -8,7 +8,7 @@
 //   4. GET  /s2s/<ver>/task/<type>/<task_id> until task_status is success or error
 // Units are only charged when a task succeeds.
 
-import { buildEffects, LOOK_IDS, UNDERTONES } from '../shared/looks.js';
+import { buildEffects, LOOK_IDS, UNDERTONES, DEPTHS } from '../shared/looks.js';
 
 const BASE = 'https://yce-api-01.makeupar.com';
 
@@ -41,10 +41,11 @@ export const TASKS = {
   // Makeup virtual try-on = 1 unit.
   vto: {
     path: '/s2s/v2.0/task/makeup-vto',
-    body: (fileId, { lookId, undertone }) => {
+    body: (fileId, { lookId, undertone, depth }) => {
       if (!LOOK_IDS.includes(lookId)) throw new Error('Unknown look');
       if (!UNDERTONES.includes(undertone)) throw new Error('Unknown undertone');
-      return { src_file_id: fileId, effects: buildEffects(lookId, undertone), version: '1.0' };
+      const d = DEPTHS.includes(depth) ? depth : 'medium';
+      return { src_file_id: fileId, effects: buildEffects(lookId, undertone, d), version: '1.0' };
     },
   },
 };

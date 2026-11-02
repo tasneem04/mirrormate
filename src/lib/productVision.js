@@ -9,7 +9,7 @@
 //
 // Tested on 26 real product photos (docs/research.md, docs/product-model.md). The user always
 // confirms the guess. Product facts come from the local table in products.js, not from the model.
-import { PRODUCTS, NOT_PRODUCT, productById, typeFromText } from './products.js';
+import { CLIP_PRODUCTS as PRODUCTS, NOT_PRODUCT, productById, typeFromText } from './products.js';
 
 const MODEL = 'Xenova/clip-vit-base-patch32';
 let classifierPromise = null;

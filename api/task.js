@@ -9,9 +9,9 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'POST') {
       if (!checkPasscode(req, res)) return;
-      const { type, fileId, lookId, undertone } = req.body || {};
+      const { type, fileId, lookId, undertone, depth } = req.body || {};
       if (!TASKS[type] || !fileId) return res.status(400).json({ error: 'Need a valid type and fileId' });
-      const taskId = await startTask(type, fileId, { lookId, undertone });
+      const taskId = await startTask(type, fileId, { lookId, undertone, depth });
       return res.status(200).json({ taskId });
     }
 

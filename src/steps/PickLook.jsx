@@ -19,7 +19,7 @@ export default function PickLook({ session, update, next, back }) {
         continue;
       }
       // Live: 1 unit per look, cached per photo, so going back and forth is free.
-      tryOnLook({ ...scanMeta, dataUrl: selfie, lookId: look.id, undertone: profile.undertone })
+      tryOnLook({ ...scanMeta, dataUrl: selfie, lookId: look.id, undertone: profile.undertone, depth: profile.depth })
         .then((img) => alive && setImages((m) => ({ ...m, [look.id]: img })))
         .catch((e) => alive && setErrors((m) => ({ ...m, [look.id]: e.message })));
     }

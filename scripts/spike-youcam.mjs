@@ -10,13 +10,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { uploadImage, startTask, waitForTask, vtoImageUrl, getUnits } from '../api/_youcam.js';
-import { undertoneFromHex } from '../shared/color.js';
+import { undertoneFromHex, depthFromHex } from '../shared/color.js';
 import { LOOK_IDS } from '../shared/looks.js';
 import { buildProfile, recommendedLook } from '../src/lib/skinSummary.js';
 
 const args = process.argv.slice(2);
 const selfiePath = args.find((a) => !a.startsWith('--'));
 const force = args.includes('--force');
+const redoVto = args.includes('--redo-vto'); // redo try-ons only, keep the saved scan
 const looksArg = args.find((a) => a.startsWith('--looks='))?.slice(8);
 if (!selfiePath) {
   console.error('Usage: npm run spike -- path/to/selfie.jpg [--force]');
@@ -63,7 +64,8 @@ if (fs.existsSync(scanFile) && !force) {
 
 const skinHex = scan.tone?.results?.color?.skin_color;
 const undertone = skinHex ? undertoneFromHex(skinHex) : 'neutral';
-console.log('Skin color', skinHex, '-> undertone', undertone);
+const depth = skinHex ? depthFromHex(skinHex) : 'medium';
+console.log('Skin color', skinHex, '-> undertone', undertone, 'depth', depth);
 
 // 2. One try-on per look (1 unit each).
 const failed = ['skin', 'tone', 'face'].filter((t) => scan[t]?.status !== 'success');
@@ -73,12 +75,17 @@ const looks = !looksArg ? LOOK_IDS : looksArg === 'best' ? [best] : looksArg.spl
 console.log('Recommended look:', best, '- trying on:', looks.join(', '));
 for (const lookId of looks) {
   const out = path.join(DEMO, `vto-${lookId}.jpg`);
-  if (fs.existsSync(out) && !force) { console.log(`vto ${lookId}: already saved`); continue; }
-  const taskId = await startTask('vto', fileId, { lookId, undertone });
+  if (fs.existsSync(out) && !force && !redoVto) { console.log(`vto ${lookId}: already saved`); continue; }
+  const taskId = await startTask('vto', fileId, { lookId, undertone, depth });
   const r = await waitForTask('vto', taskId);
   const url = vtoImageUrl(r.results);
   console.log(`vto ${lookId}: ${r.status}`, r.error || '', url ? '' : JSON.stringify(r).slice(0, 300));
-  if (url) fs.writeFileSync(out, Buffer.from(await (await fetch(url)).arrayBuffer()));
+  if (!url) continue;
+  const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+  // YouCam may return a PNG (RGBA). Keep its real extension; demo mode loads .jpg or .png.
+  const isPng = buf.subarray(0, 4).toString('hex') === '89504e47';
+  fs.writeFileSync(isPng ? out.replace(/\.jpg$/, '.png') : out, buf);
+  if (isPng) console.log(`  saved as PNG; convert to JPEG to keep the demo small`);
 }
 
 await showUnits('Units after:');

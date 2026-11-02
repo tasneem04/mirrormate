@@ -93,16 +93,26 @@ export async function analyzeSelfie(dataUrl, onProgress = () => {}) {
 
 // Virtual try-on of one look on the selfie. 1 unit, once per photo + look + undertone.
 // Re-uploads the photo (free) if the old file id may have expired.
-export async function tryOnLook({ hash, dataUrl, fileId, fileAt, lookId, undertone }) {
-  const key = `mm:vto:${hash}:${lookId}:${undertone}`;
+export async function tryOnLook({ hash, dataUrl, fileId, fileAt, lookId, undertone, depth }) {
+  const key = `mm:vto2:${hash}:${lookId}:${undertone}:${depth}`;
   const cached = cacheGet(key);
   if (cached) return cached;
   let id = fileId;
   if (!id || Date.now() - (fileAt || 0) > 30 * 60 * 1000) {
     id = (await request('POST', '/api/upload', { image: dataUrl })).fileId;
   }
-  const r = await runTask('vto', { fileId: id, lookId, undertone });
+  const r = await runTask('vto', { fileId: id, lookId, undertone, depth });
   if (!r.image) throw new Error('The try-on finished but sent no image.');
   cacheSet(key, r.image);
   return r.image;
+}
+
+// Optional Gemini product identify. Cached by photo hash so each photo is sent at most once.
+export async function smartIdentify(dataUrl) {
+  const key = `mm:id1:${await hashString(dataUrl)}`;
+  const cached = cacheGet(key);
+  if (cached) return cached;
+  const out = await request('POST', '/api/identify', { image: dataUrl });
+  cacheSet(key, out);
+  return out;
 }

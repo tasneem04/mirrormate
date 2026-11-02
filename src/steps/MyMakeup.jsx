@@ -3,7 +3,8 @@
 // Then it checks which tools the chosen look needs that you don't have.
 import React, { useEffect, useRef, useState } from 'react';
 import { startCamera, stopCamera } from '../lib/camera.js';
-import { PRODUCTS, productById, shadeVerdict, sampleColor, missingTools, TOOL_SWAPS, productAdvice, formulaNotes, PRODUCT_KNOWLEDGE } from '../lib/products.js';
+import { PRODUCTS, productById, shadeVerdict, sampleColor, missingTools, TOOL_SWAPS, productAdvice, formulaNotes, PRODUCT_KNOWLEDGE, FIT, LEVEL_TEXT, identifyWins } from '../lib/products.js';
+import { getConfig, smartIdentify } from '../lib/api.js';
 import { classifyProduct, loadClassifier, readLabel, mergeLabelHint } from '../lib/productVision.js';
 
 // Free sample product photos (public/samples, see CREDITS.md) for trying without a camera.
@@ -69,8 +70,11 @@ export default function MyMakeup({ session, update, next, back }) {
   const [error, setError] = useState('');
   const [items, setItems] = useState(session.items || []);
   const [label, setLabel] = useState(null);        // { text } read from the pack, or null
+  const [hasGemini, setHasGemini] = useState(false); // server has GEMINI_API_KEY
+  const [smart, setSmart] = useState(null);        // Gemini result for this photo
 
   useEffect(() => () => stopCamera(streamRef.current), []);
+  useEffect(() => { getConfig().then((c) => setHasGemini(Boolean(c.hasGemini))); }, []);
   useEffect(() => { update({ items }); }, [items]); // keep App state in sync
 
   async function openCamera() {
@@ -108,6 +112,7 @@ export default function MyMakeup({ session, update, next, back }) {
     setFrozen(canvas.toDataURL('image/jpeg', 0.9));
     setGuesses(null);
     setLabel(null);
+    setSmart(null);
     setBusy('Looking at your item...');
     try {
       await loadClassifier((pct) => setBusy(pct < 100 ? `Loading the product model (once)... ${pct}%` : 'Looking at your item...'));
@@ -144,6 +149,22 @@ export default function MyMakeup({ session, update, next, back }) {
     }
   }
 
+  // Optional: ask Gemini (server side). Its type wins over the on-device guess when it is sure.
+  async function onSmartIdentify() {
+    setError('');
+    setBusy('Smart identify...');
+    try {
+      const r = await smartIdentify(frozen);
+      setSmart(r);
+      if (r.notEye && r.confidence >= 0.7) setError('This does not look like an eye product.');
+      else if (identifyWins(r)) { setGuesses((g) => mergeLabelHint(g, { id: r.type })); setSure(true); }
+    } catch (e) {
+      setError(e.message || 'Smart identify failed. Pick the item from the list.');
+    } finally {
+      setBusy('');
+    }
+  }
+
   function confirm(product) {
     setGuesses(null);
     if (product.shade && frozenRef.current) {
@@ -172,10 +193,12 @@ export default function MyMakeup({ session, update, next, back }) {
 
   function addItem(product, shade) {
     const verdict = shade ? shadeVerdict(product, shade, profile) : null;
-    const name = label?.text || null;
-    const notes = [...formulaNotes(name, profile), ...productAdvice(product.id, profile)].slice(0, 2);
+    const smartName = smart ? [smart.brand, smart.name].filter(Boolean).join(' ') : '';
+    const name = smartName || label?.text || null;
+    const notes = [...formulaNotes(`${name || ''} ${smart?.formula || ''} ${smart?.finish || ''}`.trim(), profile), ...productAdvice(product.id, profile)].slice(0, 2);
     setItems((list) => [...list, { key: Date.now() + Math.random(), productId: product.id, shade, verdict, name, notes }]);
     setLabel(null);
+    setSmart(null);
   }
 
   const owned = items.map((i) => i.productId);
@@ -241,10 +264,25 @@ export default function MyMakeup({ session, update, next, back }) {
                     {g.product.label} <span className="muted small">{Math.round(g.score * 100)}%</span>
                   </button>
                 ))}
-                <button className="chip" onClick={() => { setGuesses(null); setFrozen(null); setLabel(null); }}>None of these</button>
+                <button className="chip" onClick={() => { setGuesses(null); setFrozen(null); setLabel(null); setSmart(null); }}>None of these</button>
               </div>
-              <p className="small muted" style={{ margin: 0 }}>{PRODUCT_KNOWLEDGE[guesses[0].product.id]?.what}</p>
-              {!label && <button className="btn ghost small" onClick={onReadLabel} disabled={Boolean(busy)}>Read the label</button>}
+              {smart && (
+                <p className="small" style={{ margin: 0 }}>
+                  Smart identify: <strong>{[smart.brand, smart.name].filter(Boolean).join(' ') || 'no brand visible'}</strong>
+                  {[smart.finish, smart.formula].filter(Boolean).length > 0 && ` (${[smart.finish, smart.formula].filter(Boolean).join(', ')})`}
+                  {smart.goodFor.length > 0 && ` · Good for: ${smart.goodFor.join(', ')}`}
+                  {smart.badFor.length > 0 && ` · Not for: ${smart.badFor.join(', ')}`}
+                  {smart.note && <><br /><span className="muted">{smart.note}</span></>}
+                </p>
+              )}
+              <p className="small muted" style={{ margin: 0 }}>
+                {PRODUCT_KNOWLEDGE[guesses[0].product.id]?.what}
+                {FIT[guesses[0].product.id] && ` ${LEVEL_TEXT[FIT[guesses[0].product.id].level]}.`}
+              </p>
+              <div className="row">
+                {!label && <button className="btn ghost small" onClick={onReadLabel} disabled={Boolean(busy)}>Read the label</button>}
+                {hasGemini && !smart && <button className="btn ghost small" onClick={onSmartIdentify} disabled={Boolean(busy)}>Smart identify</button>}
+              </div>
               <p className="small muted" style={{ margin: 0 }}>Not right? Pick it from the list below.</p>
             </div>
           )}

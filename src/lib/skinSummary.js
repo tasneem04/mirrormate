@@ -1,4 +1,5 @@
 // Turns raw YouCam results into a simple profile and plain-English cards.
+import { shadeGuide } from './eyeKnowledge.js';
 import { undertoneFromHex, depthFromHex } from '../../shared/color.js';
 
 // The skin analysis "json" format returns results.output = [{ type, region, ui_score, ... }].
@@ -112,6 +113,8 @@ export function profileCards(p) {
     text: `${p.depth[0].toUpperCase() + p.depth.slice(1)} skin. Undertone: ${UNDERTONE_TEXT[p.undertone]}`,
     swatch: p.skinHex,
   });
+  const sg = shadeGuide(p.undertone, p.depth);
+  cards.push({ title: 'Best shades for you', text: `Try ${sg.use}. Skip ${sg.avoid}.${p.depth === 'deep' ? ' Pick rich, highly pigmented shadows so they show.' : ''}` });
   const eyeBits = [EYELID_TEXT[p.eyelid], SHAPE_TEXT[p.eyeShape], ANGLE_TEXT[p.eyeAngle]].filter(Boolean);
   cards.push({
     title: 'Your eyes',

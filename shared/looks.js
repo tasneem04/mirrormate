@@ -14,7 +14,23 @@ const SHADES = {
   neutral: { light: '#E9CBB2', mid: '#A27C64', deep: '#5A4034', liner: '#1E1A18' },
 };
 
-const matte = (color, colorIntensity) => ({ color, texture: 'matte', colorIntensity });
+// Deep skin: pale shades vanish or look ashy, so use richer, darker colors (bronze, deep brown,
+// plum, charcoal) and a shimmer lid that catches light. Sources in docs/knowledge.md ("Shades").
+const DEEP_SHADES = {
+  warm:    { light: '#B9763A', mid: '#6E3418', deep: '#2E1409', liner: '#0E0806', shimmer: '#E7B260' },
+  cool:    { light: '#8C5A7A', mid: '#5A2D4E', deep: '#241A24', liner: '#0B0A0D', shimmer: '#D9A6C8' },
+  neutral: { light: '#A8703F', mid: '#5E3426', deep: '#26191A', liner: '#0C0909', shimmer: '#E2B06A' },
+};
+// Intensity boost by skin depth (YouCam colorIntensity is 0..100).
+const BOOST = { light: 0, medium: 10, deep: 30 };
+
+const clamp = (n) => Math.max(0, Math.min(100, Math.round(n)));
+let boost = 0; // set per request in buildEffects
+const matte = (color, colorIntensity) => ({ color, texture: 'matte', colorIntensity: clamp(colorIntensity + boost) });
+// Lid shade: shimmer on deep skin so it shows; matte otherwise.
+const lid = (s, colorIntensity) => s.shimmer
+  ? { color: s.light, texture: 'shimmer', shimmerColor: s.shimmer, shimmerIntensity: 60, colorIntensity: clamp(colorIntensity + boost) }
+  : matte(s.light, colorIntensity);
 
 export const LOOKS = [
   {
@@ -24,7 +40,7 @@ export const LOOKS = [
     tools: ['flat_brush', 'blend_brush', 'liner_pencil'],
     steps: ['prep', 'crease', 'base', 'liner'],
     effects: (s) => [
-      { category: 'eye_shadow', pattern: { name: '2colors1' }, palettes: [matte(s.light, 45), matte(s.mid, 45)] },
+      { category: 'eye_shadow', pattern: { name: '2colors1' }, palettes: [lid(s, 45), matte(s.mid, 45)] },
       { category: 'eye_liner', pattern: { name: 'Upper6' }, palettes: [matte(s.liner, 50)] },
     ],
   },
@@ -35,7 +51,7 @@ export const LOOKS = [
     tools: ['flat_brush', 'blend_brush', 'liner_pencil', 'swab'],
     steps: ['prep', 'crease', 'base', 'outer', 'liner'],
     effects: (s) => [
-      { category: 'eye_shadow', pattern: { name: '3colors1' }, palettes: [matte(s.light, 55), matte(s.mid, 60), matte(s.deep, 65)] },
+      { category: 'eye_shadow', pattern: { name: '3colors1' }, palettes: [lid(s, 55), matte(s.mid, 60), matte(s.deep, 65)] },
       { category: 'eye_liner', pattern: { name: 'Smoke11' }, palettes: [matte(s.deep, 55)] },
     ],
   },
@@ -46,7 +62,7 @@ export const LOOKS = [
     tools: ['flat_brush', 'liner_liquid'],
     steps: ['prep', 'base', 'liner', 'wing'],
     effects: (s) => [
-      { category: 'eye_shadow', pattern: { name: '1color1' }, palettes: [matte(s.light, 40)] },
+      { category: 'eye_shadow', pattern: { name: '1color1' }, palettes: [lid(s, 40)] },
       { category: 'eye_liner', pattern: { name: 'OpenWings1' }, palettes: [matte(s.liner, 80)] },
     ],
   },
@@ -54,14 +70,22 @@ export const LOOKS = [
 
 export const LOOK_IDS = LOOKS.map((l) => l.id);
 export const UNDERTONES = Object.keys(SHADES);
+export const DEPTHS = Object.keys(BOOST);
 
 // Build the YouCam makeup try-on "effects" list for a look and undertone.
-export function buildEffects(lookId, undertone) {
+// depth: 'light' | 'medium' | 'deep' (from the skin tone scan). Deep skin gets richer shades.
+export function buildEffects(lookId, undertone, depth = 'medium') {
   const look = LOOKS.find((l) => l.id === lookId);
   if (!look) throw new Error(`Unknown look: ${lookId}`);
-  return look.effects(SHADES[undertone] || SHADES.neutral);
+  boost = BOOST[depth] ?? 0;
+  try {
+    return look.effects(getShades(undertone, depth));
+  } finally {
+    boost = 0;
+  }
 }
 
-export function getShades(undertone) {
-  return SHADES[undertone] || SHADES.neutral;
+export function getShades(undertone, depth) {
+  const table = depth === 'deep' ? DEEP_SHADES : SHADES;
+  return table[undertone] || table.neutral;
 }
