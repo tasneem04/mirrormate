@@ -32,6 +32,9 @@ export default function App() {
     profile: null,    // from lib/skinSummary.buildProfile
     look: null,       // a LOOKS entry
     goal: null,       // try-on image of the chosen look
+    goalSteps: null,  // step-by-step try-ons of the chosen look { bare, base, crease, ... }
+    eyeFocus: null,   // where the eyes are on the selfie (for eye-zoomed thumbnails)
+    eyeFocusFor: null,
     items: [],        // products the user has: [{ key, productId, shade, verdict }]
     coachLog: null,   // { counts: {tipId: n}, eyeStats }
     after: null,      // final photo
@@ -42,7 +45,7 @@ export default function App() {
   const update = (patch) => setSession((s) => ({ ...s, ...patch }));
   const next = () => { setStep((i) => Math.min(i + 1, STEPS.length - 1)); window.scrollTo(0, 0); };
   const back = () => { setStep((i) => Math.max(i - 1, 0)); window.scrollTo(0, 0); };
-  const restart = () => { setStep(0); setSession((s) => ({ ...s, look: null, goal: null, coachLog: null, after: null })); };
+  const restart = () => { setStep(0); setSession((s) => ({ ...s, look: null, goal: null, goalSteps: null, coachLog: null, after: null })); };
 
   const props = { session, update, next, back, config };
   const current = STEPS[step].id;

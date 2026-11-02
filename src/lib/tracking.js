@@ -46,3 +46,24 @@ export function pickBrushHand(hands, face) {
   const d = (h) => Math.min(...eyes.map((e) => Math.hypot(h[8].x - e.x, h[8].y - e.y)));
   return [...hands].sort((a, b) => d(a) - d(b))[0];
 }
+
+// VIDEO-mode timestamps must always go up, even across steps and restarts.
+let lastTs = 0;
+export function nextTs() {
+  lastTs = Math.max(lastTs + 1, performance.now());
+  return lastTs;
+}
+
+// A second face model in IMAGE mode, for still photos (goal images). Kept apart from the
+// VIDEO-mode one so stills never confuse the live tracking.
+let imageFacePromise = null;
+export function loadImageFace() {
+  imageFacePromise ??= (async () => {
+    const files = await FilesetResolver.forVisionTasks(WASM);
+    const make = (delegate) => FaceLandmarker.createFromOptions(files, {
+      baseOptions: { modelAssetPath: FACE_MODEL, delegate }, runningMode: 'IMAGE', numFaces: 1,
+    });
+    try { return await make('GPU'); } catch { return await make('CPU'); }
+  })();
+  return imageFacePromise;
+}

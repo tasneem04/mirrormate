@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { uploadImage, startTask, waitForTask, vtoImageUrl, getUnits } from '../api/_youcam.js';
 import { undertoneFromHex, depthFromHex } from '../shared/color.js';
-import { LOOK_IDS } from '../shared/looks.js';
+import { LOOK_IDS, stageIds } from '../shared/looks.js';
 import { buildProfile, recommendedLook } from '../src/lib/skinSummary.js';
 
 const args = process.argv.slice(2);
@@ -19,13 +19,18 @@ const selfiePath = args.find((a) => !a.startsWith('--'));
 const force = args.includes('--force');
 const redoVto = args.includes('--redo-vto'); // redo try-ons only, keep the saved scan
 const looksArg = args.find((a) => a.startsWith('--looks='))?.slice(8);
+// --stages=all|base,crease,... renders the step-by-step images (vto-<look>-<stage>.jpg).
+// Without it, only the full look (last stage, with lips) is rendered as vto-<look>.jpg.
+const stagesArg = args.find((a) => a.startsWith('--stages='))?.slice(9);
+const outArg = args.find((a) => a.startsWith('--out='))?.slice(6);
 if (!selfiePath) {
   console.error('Usage: npm run spike -- path/to/selfie.jpg [--force]');
   process.exit(1);
 }
 
 const DEMO = path.resolve('src/demo');
-fs.mkdirSync(DEMO, { recursive: true });
+const OUT = path.resolve(outArg || DEMO);
+fs.mkdirSync(OUT, { recursive: true });
 const scanFile = path.join(DEMO, 'scan.json');
 
 const showUnits = async (label) => {
@@ -36,7 +41,7 @@ await showUnits('Units before:');
 
 const buffer = fs.readFileSync(selfiePath);
 const contentType = selfiePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-fs.copyFileSync(selfiePath, path.join(DEMO, 'selfie.jpg'));
+if (path.resolve(selfiePath) !== path.join(DEMO, 'selfie.jpg')) fs.copyFileSync(selfiePath, path.join(DEMO, 'selfie.jpg'));
 
 console.log('Uploading selfie...');
 const fileId = await uploadImage(buffer, contentType);
@@ -74,18 +79,24 @@ const best = recommendedLook(buildProfile(scan));
 const looks = !looksArg ? LOOK_IDS : looksArg === 'best' ? [best] : looksArg.split(',').filter((l) => LOOK_IDS.includes(l));
 console.log('Recommended look:', best, '- trying on:', looks.join(', '));
 for (const lookId of looks) {
-  const out = path.join(DEMO, `vto-${lookId}.jpg`);
-  if (fs.existsSync(out) && !force && !redoVto) { console.log(`vto ${lookId}: already saved`); continue; }
-  const taskId = await startTask('vto', fileId, { lookId, undertone, depth });
-  const r = await waitForTask('vto', taskId);
-  const url = vtoImageUrl(r.results);
-  console.log(`vto ${lookId}: ${r.status}`, r.error || '', url ? '' : JSON.stringify(r).slice(0, 300));
-  if (!url) continue;
-  const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
-  // YouCam may return a PNG (RGBA). Keep its real extension; demo mode loads .jpg or .png.
-  const isPng = buf.subarray(0, 4).toString('hex') === '89504e47';
-  fs.writeFileSync(isPng ? out.replace(/\.jpg$/, '.png') : out, buf);
-  if (isPng) console.log(`  saved as PNG; convert to JPEG to keep the demo small`);
+  const all = stageIds(lookId);
+  const final = all[all.length - 1];
+  const stages = !stagesArg ? [final] : stagesArg === 'all' ? all : stagesArg.split(',').filter((st) => all.includes(st));
+  for (const stage of stages) {
+    const name = stage === final ? `vto-${lookId}` : `vto-${lookId}-${stage}`;
+    const out = path.join(OUT, `${name}.jpg`);
+    if ((fs.existsSync(out) || fs.existsSync(out.replace(/\.jpg$/, '.png'))) && !force && !redoVto) { console.log(`${name}: already saved`); continue; }
+    const taskId = await startTask('vto', fileId, { lookId, undertone, depth, stage });
+    const r = await waitForTask('vto', taskId);
+    const url = vtoImageUrl(r.results);
+    console.log(`${name}: ${r.status}`, r.error || '', url ? '' : JSON.stringify(r).slice(0, 300));
+    if (!url) continue;
+    const buf = Buffer.from(await (await fetch(url)).arrayBuffer());
+    // YouCam may return a PNG (RGBA). Keep its real extension; demo mode loads .jpg or .png.
+    const isPng = buf.subarray(0, 4).toString('hex') === '89504e47';
+    fs.writeFileSync(isPng ? out.replace(/\.jpg$/, '.png') : out, buf);
+    if (isPng) console.log('  saved as PNG; convert to JPEG to keep the demo small');
+  }
 }
 
 await showUnits('Units after:');

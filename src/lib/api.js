@@ -12,6 +12,8 @@ export const demo = {
   selfie: demoImages['../demo/selfie.jpg'],
   scan: demoJson['../demo/scan.json'],
   vto: (lookId) => demoImages[`../demo/vto-${lookId}.jpg`] || null,
+  // Step-by-step try-on image (one layer more each step). The last stage is the full look.
+  vtoStep: (lookId, stage) => demoImages[`../demo/vto-${lookId}-${stage}.jpg`] || null,
 };
 
 let passcode = '';
@@ -91,17 +93,18 @@ export async function analyzeSelfie(dataUrl, onProgress = () => {}) {
   return { ...result, hash };
 }
 
-// Virtual try-on of one look on the selfie. 1 unit, once per photo + look + undertone.
+// Virtual try-on of one look on the selfie. 1 unit, once per photo + look + undertone + stage.
+// stage: optional step layer ('base', 'crease', ...); none = the full look with lips.
 // Re-uploads the photo (free) if the old file id may have expired.
-export async function tryOnLook({ hash, dataUrl, fileId, fileAt, lookId, undertone, depth }) {
-  const key = `mm:vto2:${hash}:${lookId}:${undertone}:${depth}`;
+export async function tryOnLook({ hash, dataUrl, fileId, fileAt, lookId, undertone, depth, stage }) {
+  const key = `mm:vto3:${hash}:${lookId}:${undertone}:${depth}:${stage || 'full'}`;
   const cached = cacheGet(key);
   if (cached) return cached;
   let id = fileId;
   if (!id || Date.now() - (fileAt || 0) > 30 * 60 * 1000) {
     id = (await request('POST', '/api/upload', { image: dataUrl })).fileId;
   }
-  const r = await runTask('vto', { fileId: id, lookId, undertone, depth });
+  const r = await runTask('vto', { fileId: id, lookId, undertone, depth, stage });
   if (!r.image) throw new Error('The try-on finished but sent no image.');
   cacheSet(key, r.image);
   return r.image;

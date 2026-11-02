@@ -109,7 +109,7 @@ input[type='text'], input[type='password'] { font: inherit; padding: 10px 16px; 
 
 /* Camera */
 .cam { position: relative; border-radius: 20px; overflow: hidden; background: var(--cam); aspect-ratio: 4 / 3; }
-.cam video, .cam canvas.overlay, .cam img.frozen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cam video, .cam canvas.overlay, .cam canvas.practice, .cam img.frozen { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mirror { transform: scaleX(-1); }
 .cam .oval { position: absolute; left: 50%; top: 50%; width: 46%; height: 74%; transform: translate(-50%, -50%); border: 3px dashed rgba(255, 255, 255, 0.85); border-radius: 50%; pointer-events: none; }
 .cam .box { position: absolute; left: 50%; top: 50%; width: 52%; height: 60%; transform: translate(-50%, -50%); border: 3px solid rgba(255, 255, 255, 0.9); border-radius: 18px; pointer-events: none; }
@@ -167,3 +167,20 @@ input[type='text'], input[type='password'] { font: inherit; padding: 10px 16px; 
 .sample-row button { border: 2px solid var(--line); border-radius: 12px; padding: 0; background: var(--card); cursor: pointer; overflow: hidden; width: 72px; height: 72px; }
 .sample-row button:hover, .sample-row button:focus-visible { border-color: var(--accent); }
 .sample-row img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Eye-zoomed thumbnails and step strips */
+.eyecrop { position: relative; overflow: hidden; width: 100%; border-radius: 8px; background: #eee; }
+.eyecrop img { position: absolute; max-width: none; height: auto; }
+.strip { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 0 12px 10px; }
+.strip figure { margin: 0; display: grid; gap: 2px; }
+.strip figcaption { font-size: 11px; text-align: center; color: var(--muted, #6b7280); }
+.strip .arrow { display: none; }
+.check { display: grid; gap: 6px; }
+.check .bars { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 8px; align-items: center; font-size: 13px; }
+.check .bar { height: 8px; border-radius: 4px; background: #e5e7eb; overflow: hidden; }
+.check .bar > i { display: block; height: 100%; background: #c2577a; transition: width .3s; }
+.check .bar > i.ok { background: #23885d; }
+.done-badge { position: absolute; left: 10px; top: 10px; background: #23885d; color: #fff; padding: 6px 10px; border-radius: 999px; font-weight: 600; font-size: 14px; }
+.steps li.passed::after { content: ' ✓'; color: #23885d; }
+.cam .goal-pip.step { display: block; width: 34%; max-width: 230px; }
+.goal-pip.step .eyecrop { border-radius: 6px; }
